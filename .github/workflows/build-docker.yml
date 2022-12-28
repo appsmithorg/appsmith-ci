@@ -1,0 +1,46 @@
+name: On demand build and push Docker Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  buildServices:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request_review' &&
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest-4-cores
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Build Services
+        working-directory: "."
+        shell: bash
+        env:
+         BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
+        run: |
+          scripts/local_testing.sh  $BRANCH_NAME --push      
+
+  push-built-docker-image:
+    needs: [buildServices]
+    if: always() &&
+      (github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request_review' &&
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.head.repo.full_name == github.repository))
+    runs-on: ubuntu-latest-4-cores
+      - name: Build and push master image to Docker Hub with commit tag
+        if: github.event_name == 'workflow_dispatch'
+        uses: depot/build-push-action@v1
+        with:
+          context: .
+          push: true
+          platforms: linux/arm64,linux/amd64
+          build-args: |
+            APPSMITH_SEGMENT_CE_KEY=${{ secrets.APPSMITH_SEGMENT_CE_KEY }}
+          tags: |
+            ${{ secrets.DOCKER_HUB_ORGANIZATION }}/appsmith-ce:${{ github.sha }}

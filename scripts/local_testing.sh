@@ -92,7 +92,7 @@ pushd app/rts > /dev/null && ./build.sh > /dev/null && pretty_print "RTS build s
 ## Build and Push the docker image
 if $PUSH
 then
-   echo "Exiting because we push docker image on a github action"
+   echo "Exiting because we push docker image only on a github action"
    exit 0
 fi
 
