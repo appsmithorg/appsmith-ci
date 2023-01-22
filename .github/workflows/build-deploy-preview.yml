@@ -474,6 +474,7 @@ jobs:
           DOCKER_HUB_ORGANIZATION: ${{ secrets.DOCKER_HUB_ORGANIZATION }}
           DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
           DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+          PULL_REQUEST_NUMBER: ${{ github.event.number }}
         run: |
           echo "environment variables set to deploy the image" $IMAGE_HASH
           /bin/bash ./scripts/deploy_preview.sh

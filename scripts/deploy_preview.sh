@@ -21,6 +21,7 @@ export cluster_name=uat-cluster
 
 echo "Region: $region"
 echo "Cluster name: $cluster_name"
+echo "Pull Request Number: $PULL_REQUEST_NUMBER"
 
 sts_output=$(aws sts assume-role --role-arn env.AWS_ROLE_ARN --role-session-name eksadminsession)
 export AWS_ACCESS_KEY_ID=$(echo $sts_output | jq -r '.Credentials''.AccessKeyId');\
@@ -49,9 +50,9 @@ echo "Add appsmith-ce to helm repo"
 AWS_REGION=ap-south-1 helm repo add appsmith http://helm.appsmith.com
 
 echo "Deploy appsmith helm chart"
-helm install appsmith/appsmith --generate-name -n $IMAGE_HASH \
-  --create-namespace --set image.repository=$DOCKER_HUB_ORGANIZATION/appsmith-ce --set image.tag=$IMAGE_HASH \
-  --set image.pullSecrets=$IMAGE_HASH --set redis.enabled=false --set mongodb.enabled=false --set ingress.enabled=true \
-  --set "ingress.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-ssl-cert=$AWS_RELEASE_CERT" \
-  --set "ingress.hosts[0].host=$IMAGE_HASH.appsmith.com, ingress.hosts[0].paths[0].path=/, ingress.hosts[0].paths[0].pathType=Prefix" \
-  --set ingress.className="nginx" --version 2.0.1
+# helm install appsmith/appsmith --generate-name -n $IMAGE_HASH \
+#   --create-namespace --set image.repository=$DOCKER_HUB_ORGANIZATION/appsmith-ce --set image.tag=$IMAGE_HASH \
+#   --set image.pullSecrets=$IMAGE_HASH --set redis.enabled=false --set mongodb.enabled=false --set ingress.enabled=true \
+#   --set "ingress.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-ssl-cert=$AWS_RELEASE_CERT" \
+#   --set "ingress.hosts[0].host=$IMAGE_HASH.appsmith.com, ingress.hosts[0].paths[0].path=/, ingress.hosts[0].paths[0].pathType=Prefix" \
+#   --set ingress.className="nginx" --version 2.0.0
