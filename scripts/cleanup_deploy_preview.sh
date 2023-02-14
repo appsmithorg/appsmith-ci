@@ -4,8 +4,8 @@ set -o errexit
 mkdir ~/.aws; touch ~/.aws/config
 
 echo "[default]
-aws_access_key_id = $AWS_ACCESS_KEY_ID
-aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" > ~/.aws/credentials
+aws_access_key_id = AKIAVWHAAGIQOE7O4O5N
+aws_secret_access_key = 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" > ~/.aws/credentials
 
 echo "[default]
 [profile eksci]
@@ -20,7 +20,7 @@ export cluster_name=uat-cluster
 echo "Region: $region"
 echo "Cluster name: $cluster_name"
 
-sts_output=$(aws sts assume-role --role-arn env.AWS_ROLE_ARN --role-session-name ekscisession)
+sts_output=$(aws sts assume-role --role-arn "arn:aws:iam::391311798816:role/eksadmin" --role-session-name ekscisession)
 echo $sts_output
 export AWS_ACCESS_KEY_ID=$(echo $sts_output | jq -r '.Credentials''.AccessKeyId');\
 export AWS_SECRET_ACCESS_KEY=$(echo $sts_output | jq -r '.Credentials''.SecretAccessKey');\
