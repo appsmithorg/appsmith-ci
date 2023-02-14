@@ -1,0 +1,22 @@
+ame: Cleanup Deploy Previews
+
+on:
+  # This line enables manual triggering of this workflow.
+  workflow_dispatch:
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the code
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Install relevant packages
+        env:
+          PARAM_ENV: ${{ github.event.inputs.environment }}
+          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: /bin/bash ./scripts/cleanup_deploy_preview.sh
