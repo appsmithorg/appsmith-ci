@@ -9,7 +9,7 @@ aws_secret_access_key = S3NR4nMbvxGLlXIHTko0T2WLwDdDphm8e7fEsbdc" > ~/.aws/crede
 
 echo "[default]
 [profile eksci]
-role_arn= $AWS_ROLE_ARN
+role_arn= "arn:aws:iam::391311798816:role/eksadmin"
 output = json
 region=ap-south-1
 source_profile = default" > ~/.aws/config
