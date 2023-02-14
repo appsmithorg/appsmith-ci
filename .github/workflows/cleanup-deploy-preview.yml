@@ -1,4 +1,4 @@
-ame: Cleanup Deploy Previews
+name: Cleanup Deploy Previews
 
 on:
   # This line enables manual triggering of this workflow.
