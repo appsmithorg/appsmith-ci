@@ -20,8 +20,12 @@ export cluster_name=uat-cluster
 echo "Region: $region"
 echo "Cluster name: $cluster_name"
 
+cat ~/.aws/credentials
+
 sts_output=$(aws sts assume-role --role-arn "arn:aws:iam::391311798816:role/eksadmin" --role-session-name ekscisession)
+ 
 echo $sts_output
+
 export AWS_ACCESS_KEY_ID=$(echo $sts_output | jq -r '.Credentials''.AccessKeyId');\
 export AWS_SECRET_ACCESS_KEY=$(echo $sts_output | jq -r '.Credentials''.SecretAccessKey');\
 export AWS_SESSION_TOKEN=$(echo $sts_output | jq -r '.Credentials''.SessionToken');
