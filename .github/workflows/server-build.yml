@@ -144,6 +144,8 @@ jobs:
           APPSMITH_ENVFILE_PATH: /tmp/dummy.env
           APPSMITH_SKIP_TESTS: ${{ inputs.skip-tests }}
         run: |
+          echo >>>>>>>>>>>>> printing skip-tests param <<<<<<<<<<<<<<<<<<<
+          echo $APPSMITH_SKIP_TESTS 
           if [ $APPSMITH_SKIP_TESTS == false ]
           then
             mvn --batch-mode versions:set \
