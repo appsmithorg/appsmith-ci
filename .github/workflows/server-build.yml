@@ -13,7 +13,11 @@ on:
       skip-tests:
         description: "This is a boolean value in case the workflow is being called in build deploy-preview"
         required: false
-        type: boolean      
+        type: boolean
+      env:
+        description: "This is a string value in case the workflow is being called in build deploy-preview"
+        required: false
+        type: string                
 
 
   pull_request:
@@ -28,7 +32,7 @@ defaults:
 
 jobs:
   build:
-    runs-on: ubuntu-latest-2-cores
+    runs-on: ubuntu-latest-8-cores
     # Only run this workflow for internally triggered events
     if: |
       github.event.pull_request.head.repo.full_name == github.repository ||
