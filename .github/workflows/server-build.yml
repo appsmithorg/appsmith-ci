@@ -13,11 +13,8 @@ on:
       skip-tests:
         description: "This is a boolean value in case the workflow is being called in build deploy-preview"
         required: false
-        type: boolean
-      env:
-        description: "This is a string value in case the workflow is being called in build deploy-preview"
-        required: false
-        type: string                
+        type: string
+        default: "false"
 
 
   pull_request:
@@ -142,22 +139,22 @@ jobs:
           APPSMITH_ENCRYPTION_SALT: "salt"
           APPSMITH_IS_SELF_HOSTED: false
           APPSMITH_ENVFILE_PATH: /tmp/dummy.env
-          APPSMITH_SKIP_TESTS: ${{ needs.notify-job-details.outputs.skip-tests }}
+          APPSMITH_SKIP_TESTS: ${{ inputs.skip-tests }}
         run: |
-          echo $APPSMITH_SKIP_TESTS 
-          if [ $APPSMITH_SKIP_TESTS == false ]
+          if [ $APPSMITH_SKIP_TESTS = "true" -o -z "$APPSMITH_SKIP_TESTS" ]
           then
-            mvn --batch-mode versions:set \
-              -DnewVersion=${{ steps.vars.outputs.version }} \
-              -DgenerateBackupPoms=false \
-              -DprocessAllModules=true
-            ./build.sh
-          else
+            echo "<<<<<<<<<<<<<<<SKIPPING TESTS>>>>>>>>>>>>>>>>"
             mvn --batch-mode versions:set \
               -DnewVersion=${{ steps.vars.outputs.version }} \
               -DgenerateBackupPoms=false \
               -DprocessAllModules=true
             ./build.sh -DskipTests
+          else
+            mvn --batch-mode versions:set \
+              -DnewVersion=${{ steps.vars.outputs.version }} \
+              -DgenerateBackupPoms=false \
+              -DprocessAllModules=true
+            ./build.sh
           fi
 
       # Restore the previous built bundle if present. If not push the newly built into the cache
