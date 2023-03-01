@@ -142,9 +142,8 @@ jobs:
           APPSMITH_ENCRYPTION_SALT: "salt"
           APPSMITH_IS_SELF_HOSTED: false
           APPSMITH_ENVFILE_PATH: /tmp/dummy.env
-          APPSMITH_SKIP_TESTS: ${{ inputs.skip-tests }}
+          APPSMITH_SKIP_TESTS: ${{ needs.notify-job-details.outputs.skip-tests }}
         run: |
-          echo >>>>>>>>>>>>> printing skip-tests param <<<<<<<<<<<<<<<<<<<
           echo $APPSMITH_SKIP_TESTS 
           if [ $APPSMITH_SKIP_TESTS == false ]
           then
