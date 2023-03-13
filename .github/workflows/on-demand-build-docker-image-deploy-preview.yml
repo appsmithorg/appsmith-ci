@@ -75,7 +75,7 @@ jobs:
       - name: Change config based on env
         if: github.event.client_payload.slash_command.args.named.env != ''
         run: |
-          if [ github.event.client_payload.slash_command.args.named.env == 'prod' ]
+          if [[ github.event.client_payload.slash_command.args.named.env == 'prod' ]]
           then
               mv app/client/vercel-prod.json app/client/vercel.json
           fi
