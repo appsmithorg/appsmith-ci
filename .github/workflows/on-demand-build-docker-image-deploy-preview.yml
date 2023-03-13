@@ -75,8 +75,8 @@ jobs:
       - name: Change config based on env
         if: github.event.client_payload.slash_command.args.named.env != ''
         run: |
-          echo "OUTPUTTTTTT------------>" $github.event.client_payload.slash_command.args.named.env
-          if [[ ( $github.event.client_payload.slash_command.args.named.env != 'prod' ) && ( $github.event.client_payload.slash_command.args.named.env != 'release' )]]
+          echo "OUTPUTTTTTT------------>" ${{ github.event.client_payload.slash_command.args.named.env }}
+          if [[ ( ${{ github.event.client_payload.slash_command.args.named.env }} != 'prod' ) && ( ${{ github.event.client_payload.slash_command.args.named.env }} != 'release' )]]
           then
              exit 1
           fi
