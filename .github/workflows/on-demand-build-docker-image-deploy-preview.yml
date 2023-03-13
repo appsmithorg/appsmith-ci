@@ -98,7 +98,7 @@ jobs:
           echo "::set-output name=dp_url::$(cat ~/run_result.txt)"
           
     outputs:
-      dp_url: ${{ steps.set-deploy-preview-url.outputs.dp_url }}
+      dp_url: echo $(cat run_result.txt)
 
 
   vercel-notify:
