@@ -84,11 +84,14 @@ jobs:
         run: vercel build --yes --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
+      - id: set-deploy-preview-url
         run: |
-          echo "vercel-dp-url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})" >> $GITHUB_OUTPUT
-
+          echo "vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}" >> ~/run_result.txt
+          cat ~/run_result.txt
+          echo "::set-output name=dp_url::$(cat ~/run_result.txt)"
+          
     outputs:
-      vercel-dp-url: ${{ env.vercel-dp-url }}
+      dp_url: ${{ steps.set-deploy-preview-url.outputs.dp_url }}
 
 
   vercel-notify:
@@ -103,7 +106,7 @@ jobs:
         with:
           issue-number: ${{ github.event.client_payload.pull_request.number }}
           body: |
-            Deploy-Preview-URL: ${{ needs.vercel-build.outputs.vercel-dp-url }}
+            Deploy-Preview-URL: ${{ needs.vercel-build.outputs.dp_url }}
     
     
   push-image:
