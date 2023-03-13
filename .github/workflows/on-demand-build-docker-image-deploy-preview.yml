@@ -75,6 +75,10 @@ jobs:
       - name: Change config based on env
         if: github.event.client_payload.slash_command.args.named.env != ''
         run: |
+          if [[ ( github.event.client_payload.slash_command.args.named.env != 'prod' ) || ( github.event.client_payload.slash_command.args.named.env != 'release' )]]
+          then
+             exit 1
+          fi
           if [[ github.event.client_payload.slash_command.args.named.env == 'prod' ]]
           then
               mv app/client/vercel-prod.json app/client/vercel.json
@@ -89,7 +93,7 @@ jobs:
       - name: Deploy Project Artifacts to Vercel
         id: set-deploy-preview-url
         run: |
-          echo "vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}" >> ~/run_result.txt
+          vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} >> ~/run_result.txt
           cat ~/run_result.txt
           echo "::set-output name=dp_url::$(cat ~/run_result.txt)"
           
