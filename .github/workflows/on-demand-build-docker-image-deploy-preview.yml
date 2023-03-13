@@ -32,7 +32,7 @@ jobs:
 
   client-build:
     name: client-build
-    if: github.event.client_payload.slash_command.args.named.env == '' || github.event.client_payload.slash_command.args.named.env != 'prod'
+    if: github.event.client_payload.slash_command.args.named.env == ''
     uses: ./.github/workflows/client-build.yml
     secrets: inherit
     with:
