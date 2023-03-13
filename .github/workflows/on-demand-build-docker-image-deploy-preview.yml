@@ -94,11 +94,11 @@ jobs:
         id: set-deploy-preview-url
         run: |
           vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} >> ~/run_result.txt
-          cat ~/run_result.txt
+          preview-url=$(cat ~/run_result.txt)
           echo "::set-output name=dp_url::$(cat ~/run_result.txt)"
           
     outputs:
-      dp_url: echo $(cat run_result.txt)
+      dp_url: $(cat ~/run_result.txt)
 
 
   vercel-notify:
