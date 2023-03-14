@@ -23,7 +23,9 @@ jobs:
 
   server-build:
     name: server-build
-    if: github.event.client_payload.slash_command.args.named.env == ''
+    if: |
+      github.event.client_payload.slash_command.args.named.env != 'release' &&
+      github.event.client_payload.slash_command.args.named.env != 'prod'
     uses: ./.github/workflows/server-build.yml
     secrets: inherit
     with:
@@ -32,7 +34,9 @@ jobs:
 
   client-build:
     name: client-build
-    if: github.event.client_payload.slash_command.args.named.env == ''
+    if: |
+      github.event.client_payload.slash_command.args.named.env != 'release' &&
+      github.event.client_payload.slash_command.args.named.env != 'prod'
     uses: ./.github/workflows/client-build.yml
     secrets: inherit
     with:
@@ -41,7 +45,9 @@ jobs:
 
   rts-build:
     name: rts-build
-    if: github.event.client_payload.slash_command.args.named.env == ''
+    if: |
+      github.event.client_payload.slash_command.args.named.env != 'release' &&
+      github.event.client_payload.slash_command.args.named.env != 'prod'
     uses: ./.github/workflows/rts-build.yml
     secrets: inherit
     with:
@@ -49,7 +55,9 @@ jobs:
 
   vercel-build:
     name: vercel-build
-    if: github.event.client_payload.slash_command.args.named.env != ''
+    if: |
+      github.event.client_payload.slash_command.args.named.env == 'release' ||
+      github.event.client_payload.slash_command.args.named.env == 'prod'
     runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
