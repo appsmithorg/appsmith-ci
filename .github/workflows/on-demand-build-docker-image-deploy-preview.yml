@@ -195,7 +195,6 @@ jobs:
           PULL_REQUEST_NUMBER: ${{ github.event.client_payload.pull_request.number }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          
         run: |
           echo "environment variables set to deploy the image" $IMAGE_HASH
           /bin/bash ./scripts/deploy_preview.sh
