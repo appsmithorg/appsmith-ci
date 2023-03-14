@@ -36,6 +36,8 @@ export HELMCHART="appsmith"
 export HELMCHART_URL="http://helm.appsmith.com"
 export HELMCHART_VERSION="2.0.0"
 export DBNAME=ce"$PULL_REQUEST_NUMBER"
+export DB_USERNAME=$DB_USERNAME
+export DB_PASSWORD=$DB_PASSWORD
 
 aws eks update-kubeconfig --region $region --name $cluster_name --profile eksci
 
