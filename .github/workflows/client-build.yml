@@ -76,6 +76,15 @@ jobs:
           "INSERT INTO public.run_meta (repo, gh_run_id, gh_run_attempt, is_active)
           VALUES ('${{github.repository}}', '${{github.run_id}}', '${{github.run_attempt}}', FALSE)"
 
+      # Run the Jest tests only if the workflow has been invoked in a PR and the previous re-run has failed
+      - name: Run the jest tests experiment
+        if: steps.run_result.outputs.run_result != 'success' && inputs.pr != 0
+        run: |
+          if [[ "${{ inputs.skip-tests }}" != "true" ]]
+          then
+            echo run and testing
+          fi
+
       # In case this is second attempt try restoring status of the prior attempt from cache
       - name: Restore the previous run result
         uses: actions/cache@v3
