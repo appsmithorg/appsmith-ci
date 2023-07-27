@@ -1,3 +1,4 @@
-export { ThemeProvider } from "./components/ThemeProvider";
-export { TokensAccessor } from "./utils/TokensAccessor";
-export { ColorsAccessor } from "./utils/ColorsAccessor";
+export * from "./typography";
+export * from "./token";
+export * from "./theme";
+export * from "./color";

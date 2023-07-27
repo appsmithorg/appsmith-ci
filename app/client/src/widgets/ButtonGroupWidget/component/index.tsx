@@ -155,6 +155,8 @@ interface ButtonStyleProps {
   iconAlign?: string;
   placement?: ButtonPlacement;
   isLabel: boolean;
+  minWidth?: number;
+  minHeight?: number;
 }
 
 /*
@@ -183,10 +185,10 @@ const StyledButton = styled.button<ThemeProp & ButtonStyleProps>`
   align-items: center;
   padding: 0px 10px;
 
-  .auto-layout & {
-    min-height: 32px;
-    min-width: 120px;
-  }
+  ${({ minHeight, minWidth }) => `
+    ${minWidth ? `min-width: ${minWidth}px;` : ""}
+    ${minHeight ? `min-height: ${minHeight}px;` : ""}
+  `};
 
   &:hover,
   &:active,
@@ -408,7 +410,6 @@ class ButtonGroupComponent extends React.Component<
       };
     });
 
-    // @ts-expect-error: setTimeout return type mismatch
     this.timer = setTimeout(() => {
       this.setState(() => {
         return {
@@ -548,6 +549,14 @@ class ButtonGroupComponent extends React.Component<
     items = sortBy(items, ["index"]);
     const popoverId = `button-group-${widgetId}`;
 
+    const getOnClick = (button: GroupButtonProps) => {
+      if (!button.onClick) return;
+
+      return () => {
+        this.onButtonClick(button.onClick, button.id);
+      };
+    };
+
     return (
       <ButtonGroupWrapper
         borderRadius={this.props.borderRadius}
@@ -604,6 +613,8 @@ class ButtonGroupComponent extends React.Component<
                       isHorizontal={isHorizontal}
                       isLabel={!!button.label}
                       key={button.id}
+                      minHeight={this.props.minHeight}
+                      minWidth={this.props.buttonMinWidth}
                       ref={this.state.itemRefs[button.id]}
                     >
                       <StyledButtonContent
@@ -636,9 +647,7 @@ class ButtonGroupComponent extends React.Component<
               disabled={isButtonDisabled}
               key={button.id}
               loading={!!loadedBtnId}
-              onClick={() => {
-                this.onButtonClick(button.onClick, button.id);
-              }}
+              onClick={getOnClick(button)}
               renderMode={this.props.renderMode}
               style={{ flex: "1 1 auto" }}
             >
@@ -650,7 +659,9 @@ class ButtonGroupComponent extends React.Component<
                 iconAlign={button.iconAlign}
                 isHorizontal={isHorizontal}
                 isLabel={!!button.label}
-                onClick={() => this.onButtonClick(button.onClick, button.id)}
+                minHeight={this.props.minHeight}
+                minWidth={this.props.buttonMinWidth}
+                onClick={getOnClick(button)}
               >
                 <StyledButtonContent
                   iconAlign={button.iconAlign || "left"}
@@ -725,6 +736,8 @@ export interface ButtonGroupComponentProps {
   width: number;
   minPopoverWidth: number;
   widgetId: string;
+  buttonMinWidth?: number;
+  minHeight?: number;
 }
 
 export interface ButtonGroupComponentState {

@@ -2,11 +2,13 @@ import Widget from "./widget";
 import IconSVG from "./icon.svg";
 import { ButtonPlacementTypes, ButtonVariantTypes } from "components/constants";
 import { MenuItemsSource } from "./constants";
+import { WIDGET_TAGS } from "constants/WidgetConstants";
 
 export const CONFIG = {
   type: Widget.getWidgetType(),
-  name: "Menu Button",
+  name: "Menu button",
   iconSVG: IconSVG,
+  tags: [WIDGET_TAGS.BUTTONS],
   defaults: {
     label: "Open Menu",
     menuVariant: ButtonVariantTypes.PRIMARY,
@@ -55,6 +57,8 @@ export const CONFIG = {
     contentConfig: Widget.getPropertyPaneContentConfig(),
     styleConfig: Widget.getPropertyPaneStyleConfig(),
     stylesheetConfig: Widget.getStylesheetConfig(),
+    autocompleteDefinitions: Widget.getAutocompleteDefinitions(),
+    setterConfig: Widget.getSetterConfig(),
   },
   autoLayout: {
     defaults: {
@@ -71,6 +75,7 @@ export const CONFIG = {
           return {
             minWidth: "120px",
             maxWidth: "360px",
+            minHeight: "40px",
           };
         },
       },

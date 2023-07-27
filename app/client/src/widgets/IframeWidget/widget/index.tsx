@@ -1,13 +1,43 @@
 import { EventType } from "constants/AppsmithActionConstants/ActionConstants";
 import { ValidationTypes } from "constants/WidgetValidation";
-import type { Stylesheet } from "entities/AppTheming";
+import type { SetterConfig, Stylesheet } from "entities/AppTheming";
 import React from "react";
 import type { WidgetState } from "widgets/BaseWidget";
 import BaseWidget from "widgets/BaseWidget";
 import IframeComponent from "../component";
 import type { IframeWidgetProps } from "../constants";
+import { generateTypeDef } from "utils/autocomplete/dataTreeTypeDefCreator";
+import { DefaultAutocompleteDefinitions } from "widgets/WidgetUtils";
+import type { AutocompletionDefinitions } from "widgets/constants";
 
 class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
+  static getAutocompleteDefinitions(): AutocompletionDefinitions {
+    return (widget: IframeWidgetProps) => ({
+      "!doc": "Iframe widget is used to display iframes in your app.",
+      "!url": "https://docs.appsmith.com/widget-reference/iframe",
+      isVisible: DefaultAutocompleteDefinitions.isVisible,
+      source: "string",
+      title: "string",
+      message: generateTypeDef(widget.message),
+      messageMetadata: generateTypeDef(widget.messageMetadata),
+    });
+  }
+
+  static getSetterConfig(): SetterConfig {
+    return {
+      __setters: {
+        setVisibility: {
+          path: "isVisible",
+          type: "boolean",
+        },
+        setURL: {
+          path: "source",
+          type: "string",
+        },
+      },
+    };
+  }
+
   static getPropertyPaneContentConfig() {
     return [
       {
@@ -57,7 +87,7 @@ class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
           },
           {
             propertyName: "animateLoading",
-            label: "Animate Loading",
+            label: "Animate loading",
             controlType: "SWITCH",
             helpText: "Controls the loading of the widget",
             defaultValue: true,
@@ -110,7 +140,7 @@ class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
         children: [
           {
             propertyName: "borderColor",
-            label: "Border Color",
+            label: "Border color",
             helpText: "Controls the color of the border",
             controlType: "COLOR_PICKER",
             isJSConvertible: true,
@@ -121,11 +151,11 @@ class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
         ],
       },
       {
-        sectionName: "Border and Shadow",
+        sectionName: "Border and shadow",
         children: [
           {
             propertyName: "borderWidth",
-            label: "Border Width (px)",
+            label: "Border width (px)",
             helpText: "Controls the size of the border in px",
             controlType: "INPUT_TEXT",
             isBindProperty: true,
@@ -138,7 +168,7 @@ class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
           },
           {
             propertyName: "borderOpacity",
-            label: "Border Opacity (%)",
+            label: "Border opacity (%)",
             helpText: "Controls the opacity of the border in percentage",
             controlType: "INPUT_TEXT",
             isBindProperty: true,
@@ -151,7 +181,7 @@ class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
           },
           {
             propertyName: "borderRadius",
-            label: "Border Radius",
+            label: "Border radius",
             helpText:
               "Rounds the corners of the icon button's outer border edge",
             controlType: "BORDER_RADIUS_OPTIONS",
@@ -162,7 +192,7 @@ class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
           },
           {
             propertyName: "boxShadow",
-            label: "Box Shadow",
+            label: "Box shadow",
             helpText:
               "Enables you to cast a drop shadow from the frame of the widget",
             controlType: "BOX_SHADOW_OPTIONS",

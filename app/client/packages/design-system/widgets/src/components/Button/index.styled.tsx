@@ -1,8 +1,72 @@
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import { Button as HeadlessButton } from "@design-system/headless";
-import type { ButtonProps } from "./Button";
 
-export const StyledButton = styled(HeadlessButton)<ButtonProps>`
+import type { ButtonProps } from "./Button";
+import type { PickRename } from "../../utils";
+
+type StyledButtonProps = PickRename<
+  ButtonProps,
+  {
+    color: "$color";
+    variant: "$variant";
+  }
+>;
+
+export const buttonStyles = css<StyledButtonProps>`
+  ${({ $color, $variant }) => {
+    if ($variant === "filled") {
+      return css`
+        background-color: var(--color-bg-${$color});
+        color: var(--color-fg-on-${$color});
+        border-color: transparent;
+
+        &[data-hovered]:not([aria-disabled]) {
+          background-color: var(--color-bg-${$color}-hover);
+        }
+
+        &[data-active]:not([aria-disabled]) {
+          background-color: var(--color-bg-${$color}-active);
+        }
+      `;
+    }
+
+    if ($variant === "outlined") {
+      return css`
+        background-color: transparent;
+        color: var(--color-fg-${$color});
+        border-color: var(--color-bd-${$color});
+        border-width: var(--border-width-1);
+
+        &[data-hovered]:not([aria-disabled]) {
+          background-color: var(--color-bg-${$color}-subtle-hover);
+        }
+
+        &[data-active]:not([aria-disabled]) {
+          background-color: var(--color-bg-${$color}-subtle-active);
+        }
+      `;
+    }
+
+    if ($variant === "ghost") {
+      return css`
+        background: transparent;
+        color: var(--color-fg-${$color});
+        border-color: transparent;
+        border-width: 0;
+
+        &[data-hovered]:not([aria-disabled]) {
+          background: var(--color-bg-${$color}-subtle-hover);
+        }
+
+        &[data-active]:not([aria-disabled]) {
+          background: var(--color-bg-${$color}-subtle-active);
+        }
+      `;
+    }
+  }}
+`;
+
+export const StyledButton = styled(HeadlessButton)<StyledButtonProps>`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -13,15 +77,16 @@ export const StyledButton = styled(HeadlessButton)<ButtonProps>`
   min-height: calc(var(--sizing-root-unit) * 8);
   border-radius: 100%;
   user-select: none;
+  min-inline-size: var(--sizing-8);
+  position: relative;
+  font-weight: 600;
 
-  // TODO: remove this when we use only flex layout
-  &[data-fit-container="true"] {
-    width: 100%;
-    height: 100%;
+  &[data-icon-position="start"] *:not([data-hidden]) + *:not([data-hidden]) {
+    margin-inline-start: var(--spacing-1);
   }
 
-  &[data-loading="true"] {
-    pointer-events: none;
+  &[data-icon-position="end"] *:not([data-hidden]) + *:not([data-hidden]) {
+    margin-inline-end: var(--spacing-1);
   }
 
   &[data-variant="primary"] {
@@ -29,52 +94,69 @@ export const StyledButton = styled(HeadlessButton)<ButtonProps>`
     color: var(--color-fg-on-accent);
     border-color: transparent;
 
-    &.is-hovered {
-      background-color: var(--color-bg-accent-hover);
-    }
-
-    &.is-active {
-      background-color: var(--color-bg-accent-active);
-    }
+  &[data-icon-position="end"] {
+    flex-direction: row-reverse;
   }
 
-  &[data-variant="secondary"] {
-    background-color: transparent;
-    color: var(--color-fg-accent);
-    border-color: var(--color-bd-accent);
-    border-width: var(--border-width-1);
-
-    &.is-hovered {
-      background-color: var(--color-bg-accent-subtle-hover);
-    }
-
-    &.is-active {
-      background-color: var(--color-bg-accent-subtle-active);
-    }
+  /** Note: adding direct selector ">" here because blueprint also has data-icon attribute on their icons */
+  & > [data-icon] {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: var(--sizing-4);
+    width: var(--sizing-4);
   }
 
-  &[data-variant="tertiary"] {
-    background: transparent;
-    color: var(--color-fg-accent);
-    border-color: transparent;
-    border-width: 0;
-
-    &.is-hovered {
-      background: var(--color-bg-accent-subtle-hover);
-    }
-
-    &.is-active {
-      background: var(--color-bg-accent-subtle-active);
-    }
+  // Note: adding important here as ADS is overriding the color of blueprint icon globally
+  // TODO(pawan): Remove this once ADS team removes the global override
+  &[data-button] .bp3-icon {
+    color: currentColor !important;
   }
 
-  // we don't use :focus-visible because not all browsers (safari) have it yet
-  &:not([data-loading]).focus-ring {
-    box-shadow: 0 0 0 2px white, 0 0 0 4px var(--color-bd-focus);
+  /**
+  * ----------------------------------------------------------------------------
+  * FOCUSSED
+  *-----------------------------------------------------------------------------
+  */
+  &[data-focused] {
+    box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-bd-focus);
   }
 
-  &.is-disabled {
-    pointer-events: none;
+  /**
+  * ----------------------------------------------------------------------------
+  * DISABLED
+  *-----------------------------------------------------------------------------
+  */
+  &[aria-disabled] {
+    cursor: default;
     opacity: var(--opacity-disabled);
+  }
+
+  /**
+  * ----------------------------------------------------------------------------
+  * LOADING
+  *-----------------------------------------------------------------------------
+  */
+  &[data-loading] {
+    cursor: default;
+    /** adding opacity 1 here because we are lowering opacity for aria-disabled and when loading is true, aria-disabled is also true  */
+    opacity: 1;
+  }
+`;
+
+/**
+ * We have this Bug in Firefox where we are unable to drag
+ * buttons - https://bugzilla.mozilla.org/show_bug.cgi?id=568313
+ *
+ * We found a solution here - https://stackoverflow.com/a/43888410
+ */
+export const DragContainer = styled.div`
+  &:after {
+    content: "";
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    position: absolute;
   }
 `;

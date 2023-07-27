@@ -102,6 +102,8 @@ export interface ButtonStyleProps {
   dimension?: number;
   hasOnClickAction?: boolean;
   compactMode?: string;
+  minWidth?: number;
+  minHeight?: number;
 }
 
 export const StyledButton = styled((props) => (
@@ -129,12 +131,12 @@ export const StyledButton = styled((props) => (
   line-height: ${({ compactMode }) =>
     compactMode === "SHORT" ? "24px" : "28px"};
 
-  .auto-layout & {
-    min-height: 32px;
-    min-width: 32px;
-    height: 32px;
-    width: 32px;
-  }
+  ${({ minHeight, minWidth }) =>
+    `&& {
+      ${minWidth ? `min-width: ${minWidth}px;` : ""}
+      ${minHeight ? `min-height: ${minHeight}px;` : ""}
+    }
+  `}
 
   ${({ buttonColor, buttonVariant, compactMode, hasOnClickAction, theme }) => `
     &:enabled {
@@ -246,6 +248,8 @@ export interface IconButtonComponentProps extends ComponentProps {
   height: number;
   tooltip?: string;
   width: number;
+  minHeight?: number;
+  minWidth?: number;
 }
 
 function IconButtonComponent(props: IconButtonComponentProps) {
@@ -257,6 +261,8 @@ function IconButtonComponent(props: IconButtonComponentProps) {
     hasOnClickAction,
     height,
     isDisabled,
+    minHeight,
+    minWidth,
     onClick,
     renderMode,
     tooltip,
@@ -276,16 +282,15 @@ function IconButtonComponent(props: IconButtonComponentProps) {
     return width - WIDGET_PADDING * 2;
   }, [width, height]);
 
+  const hasOnClick = !isDisabled && hasOnClickAction;
+
   const iconBtnWrapper = (
     <IconButtonContainer
       buttonColor={buttonColor}
       buttonVariant={buttonVariant}
       disabled={isDisabled}
       hasOnClickAction={hasOnClickAction}
-      onClick={() => {
-        if (isDisabled) return;
-        onClick();
-      }}
+      onClick={hasOnClick ? onClick : undefined}
       renderMode={renderMode}
     >
       <StyledButton
@@ -298,6 +303,8 @@ function IconButtonComponent(props: IconButtonComponentProps) {
         hasOnClickAction={hasOnClickAction}
         icon={props.iconName}
         large
+        minHeight={minHeight}
+        minWidth={minWidth}
       />
     </IconButtonContainer>
   );

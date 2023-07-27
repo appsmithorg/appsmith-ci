@@ -70,6 +70,12 @@ export function updateWidgetDimensionAction(
   };
 }
 
+export const fetchSnapshotDetailsAction = () => {
+  return {
+    type: ReduxActionTypes.FETCH_LAYOUT_SNAPSHOT_DETAILS,
+  };
+};
+
 export const setConversionStart = (conversionState: CONVERSION_STATES) => {
   return {
     type: ReduxActionTypes.START_CONVERSION_FLOW,
@@ -87,5 +93,15 @@ export const setAutoCanvasResizing = (isAutoCanvasResizing: boolean) => {
   return {
     type: ReduxActionTypes.SET_AUTO_CANVAS_RESIZING,
     payload: isAutoCanvasResizing,
+  };
+};
+
+export const updatePositionsOnTabChange = (
+  widgetId: string,
+  selectedTabWidgetId: string,
+) => {
+  return {
+    type: ReduxActionTypes.UPDATE_POSITIONS_ON_TAB_CHANGE,
+    payload: { selectedTabWidgetId, widgetId },
   };
 };

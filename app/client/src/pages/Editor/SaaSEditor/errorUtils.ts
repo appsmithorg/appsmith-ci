@@ -6,10 +6,12 @@ import {
   GSHEET_AUTHORISED_FILE_IDS_KEY,
   GSHEET_AUTHORIZATION_ERROR,
   GSHEET_FILES_NOT_SELECTED,
-} from "ce/constants/messages";
+} from "@appsmith/constants/messages";
 import { getDatasourcePropertyValue } from "utils/editorContextUtils";
 import { GOOGLE_SHEET_SPECIFIC_SHEETS_SCOPE } from "constants/Datasource";
 import { PluginPackageName } from "entities/Action";
+import { getCurrentEnvironment } from "@appsmith/utils/Environments";
+import { get } from "lodash";
 
 /**
  * Returns true if :
@@ -22,21 +24,33 @@ export function isAuthorisedFilesEmptyGsheet(
   datasource: Datasource,
   propertyKey: string,
 ): boolean {
-  const scopeValue: string = (
-    datasource?.datasourceConfiguration?.authentication as any
-  )?.scopeString;
+  const currentEnvironment = getCurrentEnvironment();
+  const value = get(
+    datasource,
+    `datasourceStorages.${currentEnvironment}.datasourceConfiguration.authentication.scopeString`,
+  );
+  const scopeValue: string = value ? value : "";
 
-  const authorisedFileIds = getDatasourcePropertyValue(datasource, propertyKey);
-  const authStatus =
-    datasource?.datasourceConfiguration?.authentication?.authenticationStatus;
+  const authorisedFileIds = getDatasourcePropertyValue(
+    datasource,
+    propertyKey,
+    currentEnvironment,
+  );
+  const authStatus = get(
+    datasource,
+    `datasourceStorages.${currentEnvironment}.datasourceConfiguration.authentication.authenticationStatus`,
+  );
   const isAuthFailure =
-    !!authStatus && authStatus === AuthenticationStatus.FAILURE;
+    !!authStatus &&
+    authStatus === AuthenticationStatus.FAILURE_FILE_NOT_SELECTED;
+  const gapiLoadSuccess = (window as any).googleAPIsLoaded;
 
   return (
     !!authorisedFileIds &&
     authorisedFileIds.length === 0 &&
     scopeValue.includes(GOOGLE_SHEET_SPECIFIC_SHEETS_SCOPE) &&
-    isAuthFailure
+    isAuthFailure &&
+    !!gapiLoadSuccess
   );
 }
 

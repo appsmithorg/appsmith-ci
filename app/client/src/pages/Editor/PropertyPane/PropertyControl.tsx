@@ -3,11 +3,8 @@ import _, { get, isFunction, merge } from "lodash";
 import equal from "fast-deep-equal/es6";
 import * as log from "loglevel";
 
-import {
-  ControlPropertyLabelContainer,
-  ControlWrapper,
-} from "components/propertyControls/StyledControls";
-import { Icon, JSToggleButton } from "design-system-old";
+import { ControlWrapper } from "components/propertyControls/StyledControls";
+import { ToggleButton, Tooltip, Button } from "design-system";
 import PropertyControlFactory from "utils/PropertyControlFactory";
 import PropertyHelpLabel from "pages/Editor/PropertyPane/PropertyHelpLabel";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,10 +16,7 @@ import {
   deleteWidgetProperty,
   setWidgetDynamicProperty,
 } from "actions/controlActions";
-import type {
-  PropertyHookUpdates,
-  PropertyPaneControlConfig,
-} from "constants/PropertyControlConstants";
+import type { PropertyPaneControlConfig } from "constants/PropertyControlConstants";
 import type { IPanelProps } from "@blueprintjs/core";
 import PanelPropertiesEditor from "./PanelPropertiesEditor";
 import type { DynamicPath } from "utils/DynamicBindingUtils";
@@ -44,9 +38,7 @@ import LOG_TYPE from "entities/AppsmithConsole/logtype";
 import { getExpectedValue } from "utils/validation/common";
 import type { ControlData } from "components/propertyControls/BaseControl";
 import type { AppState } from "@appsmith/reducers";
-import { AutocompleteDataType } from "utils/autocomplete/CodemirrorTernService";
-import { TooltipComponent } from "design-system-old";
-import { ReactComponent as ResetIcon } from "assets/icons/control/undo_2.svg";
+import { AutocompleteDataType } from "utils/autocomplete/AutocompleteDataType";
 import { JS_TOGGLE_DISABLED_MESSAGE } from "@appsmith/constants/messages";
 import {
   getPropertyControlFocusElement,
@@ -57,7 +49,17 @@ import { setFocusablePropertyPaneField } from "actions/propertyPaneActions";
 import WidgetFactory from "utils/WidgetFactory";
 import type { AdditionalDynamicDataTree } from "utils/autocomplete/customTreeTypeDefCreator";
 import clsx from "clsx";
+import styled from "styled-components";
+import { importSvg } from "design-system-old";
+import classNames from "classnames";
+import type { PropertyUpdates } from "widgets/constants";
+import { getIsOneClickBindingOptionsVisibility } from "selectors/oneClickBindingSelectors";
 
+const ResetIcon = importSvg(() => import("assets/icons/control/undo_2.svg"));
+
+const StyledDeviated = styled.div`
+  background-color: var(--ads-v2-color-bg-brand);
+`;
 type Props = PropertyPaneControlConfig & {
   panel: IPanelProps;
   theme: EditorTheme;
@@ -66,7 +68,7 @@ type Props = PropertyPaneControlConfig & {
 };
 
 const SHOULD_NOT_REJECT_DYNAMIC_BINDING_LIST_FOR = ["COLOR_PICKER"];
-const tooltipModifier = { preventOverflow: { enabled: true } };
+// const tooltipModifier = { preventOverflow: { enabled: true } };
 
 const PropertyControl = memo((props: Props) => {
   const dispatch = useDispatch();
@@ -178,8 +180,14 @@ const PropertyControl = memo((props: Props) => {
     updateDataTreePathFn: childWidgetDataTreePathEnhancementFn,
   } = enhancementFns || {};
 
+  const connectDataClicked = useSelector(getIsOneClickBindingOptionsVisibility);
+
   const toggleDynamicProperty = useCallback(
-    (propertyName: string, isDynamic: boolean) => {
+    (
+      propertyName: string,
+      isDynamic: boolean,
+      shouldValidateValueOnDynamicPropertyOff?: boolean,
+    ) => {
       AnalyticsUtil.logEvent("WIDGET_TOGGLE_JS_PROP", {
         widgetType: widgetProperties?.type,
         widgetName: widgetProperties?.widgetName,
@@ -192,10 +200,11 @@ const PropertyControl = memo((props: Props) => {
       // we don't want to remove the path from dynamic binding list
       // on toggling of js in case of few widgets
       if (
-        SHOULD_NOT_REJECT_DYNAMIC_BINDING_LIST_FOR.includes(
+        (SHOULD_NOT_REJECT_DYNAMIC_BINDING_LIST_FOR.includes(
           props.controlType,
         ) &&
-        isDynamicValue(propertyValue)
+          isDynamicValue(propertyValue)) ||
+        !shouldValidateValueOnDynamicPropertyOff
       ) {
         shouldRejectDynamicBindingPathList = false;
       }
@@ -206,6 +215,7 @@ const PropertyControl = memo((props: Props) => {
           propertyName,
           !isDynamic,
           shouldRejectDynamicBindingPathList,
+          !shouldValidateValueOnDynamicPropertyOff,
         ),
       );
     },
@@ -243,6 +253,7 @@ const PropertyControl = memo((props: Props) => {
   const {
     isTriggerProperty,
     postUpdateAction,
+    shouldSwitchToNormalMode,
     updateHook,
     updateRelatedWidgetProperties,
   } = props;
@@ -252,7 +263,7 @@ const PropertyControl = memo((props: Props) => {
       propertyName: string,
       propertyValue: any,
     ): UpdateWidgetPropertyPayload | undefined => {
-      let propertiesToUpdate: Array<PropertyHookUpdates> | undefined;
+      let propertiesToUpdate: Array<PropertyUpdates> | undefined;
       // To support updating multiple properties of same widget.
       if (updateHook) {
         propertiesToUpdate = updateHook(
@@ -427,9 +438,12 @@ const PropertyControl = memo((props: Props) => {
 
       const enhancementsToOtherWidgets: UpdateWidgetPropertyPayload[] =
         getOtherWidgetPropertyChanges(propertyName, propertyValue);
+
       let allPropertiesToUpdates: UpdateWidgetPropertyPayload[] = [];
+
       if (selfUpdates) {
         allPropertiesToUpdates.push(selfUpdates);
+
         // ideally we should not allow updating another widget without any updates on its own.
         if (enhancementsToOtherWidgets && enhancementsToOtherWidgets.length) {
           allPropertiesToUpdates = allPropertiesToUpdates.concat(
@@ -437,6 +451,7 @@ const PropertyControl = memo((props: Props) => {
           );
         }
       }
+
       return allPropertiesToUpdates;
     },
     [getOtherWidgetPropertyChanges, getWidgetsOwnUpdatesOnPropertyChange],
@@ -505,6 +520,7 @@ const PropertyControl = memo((props: Props) => {
       propertyName: string,
       propertyValue: any,
       isUpdatedViaKeyboard?: boolean,
+      isDynamicPropertyPath?: boolean,
     ) => {
       AnalyticsUtil.logEvent("WIDGET_PROPERTY_UPDATE", {
         widgetType: widgetProperties.type,
@@ -521,6 +537,20 @@ const PropertyControl = memo((props: Props) => {
         );
 
       if (allPropertiesToUpdates && allPropertiesToUpdates.length) {
+        const update = allPropertiesToUpdates[0];
+
+        if (isDynamicPropertyPath && update) {
+          allPropertiesToUpdates[0] = merge({}, update, {
+            dynamicUpdates: {
+              dynamicPropertyPathList: [
+                {
+                  key: propertyName,
+                },
+              ],
+            },
+          });
+        }
+
         // updating properties of a widget(s) should be done only once when property value changes.
         // to make sure dsl updates are atomic which is a necessity for undo/redo.
         onBatchUpdatePropertiesOfMultipleWidgets(allPropertiesToUpdates);
@@ -667,8 +697,9 @@ const PropertyControl = memo((props: Props) => {
     };
 
     const uniqId = btoa(`${widgetProperties.widgetId}.${propertyName}`);
-    const canDisplayValueInUI =
-      PropertyControlFactory.controlUIToggleValidation.get(config.controlType);
+    const controlMethods = PropertyControlFactory.controlMethods.get(
+      config.controlType,
+    );
 
     const customJSControl = getCustomJSControl();
 
@@ -691,7 +722,8 @@ const PropertyControl = memo((props: Props) => {
         }
 
         // disable button if value can't be represented in UI mode
-        if (!canDisplayValueInUI?.(config, value)) isToggleDisabled = true;
+        if (!controlMethods?.canDisplayValueInUI?.(config, value))
+          isToggleDisabled = true;
       }
 
       // Enable button if the value is same as the one defined in theme stylesheet.
@@ -717,6 +749,17 @@ const PropertyControl = memo((props: Props) => {
       };
     }
 
+    if (shouldSwitchToNormalMode) {
+      const switchMode = shouldSwitchToNormalMode(
+        isDynamic,
+        isToggleDisabled,
+        connectDataClicked,
+      );
+      if (switchMode) {
+        toggleDynamicProperty(propertyName, true);
+      }
+    }
+
     try {
       return (
         <ControlWrapper
@@ -732,69 +775,69 @@ const PropertyControl = memo((props: Props) => {
           }
           ref={controlRef}
         >
-          <ControlPropertyLabelContainer className="gap-1 flex justify-between items-center">
-            <div className="flex flex-row items-end gap-1">
-              <PropertyHelpLabel
-                label={label}
-                theme={props.theme}
-                tooltip={helpText}
-              />
-              {isConvertible && (
-                <TooltipComponent
-                  content={JS_TOGGLE_DISABLED_MESSAGE}
-                  disabled={!isToggleDisabled}
-                  hoverOpenDelay={200}
-                  modifiers={tooltipModifier}
-                  openOnTargetFocus={false}
-                  position="auto"
-                >
-                  <JSToggleButton
-                    handleClick={() =>
-                      toggleDynamicProperty(propertyName, isDynamic)
+          <div className="gap-1 flex items-center">
+            <PropertyHelpLabel
+              label={label}
+              theme={props.theme}
+              tooltip={helpText}
+            />
+            {isConvertible && (
+              <Tooltip
+                content={JS_TOGGLE_DISABLED_MESSAGE}
+                isDisabled={!isToggleDisabled}
+              >
+                <span>
+                  <ToggleButton
+                    className={classNames("t--js-toggle", {
+                      "is-active": isDynamic,
+                    })}
+                    icon="js-toggle-v2"
+                    isDisabled={isToggleDisabled}
+                    isSelected={isDynamic}
+                    onClick={() =>
+                      toggleDynamicProperty(
+                        propertyName,
+                        isDynamic,
+                        controlMethods?.shouldValidateValueOnDynamicPropertyOff(
+                          config,
+                          propertyValue,
+                        ),
+                      )
                     }
-                    isActive={isDynamic}
-                    isToggleDisabled={isToggleDisabled}
+                    size="sm"
                   />
-                </TooltipComponent>
-              )}
-              {isPropertyDeviatedFromTheme && (
-                <>
-                  <TooltipComponent
-                    content="Value deviated from theme"
-                    openOnTargetFocus={false}
-                  >
-                    <div className="w-2 h-2 rounded-full bg-primary-500" />
-                  </TooltipComponent>
-                  <button
-                    className="hidden ml-auto focus:ring-2 group-hover:block reset-button"
-                    onClick={resetPropertyValueToTheme}
-                  >
-                    <TooltipComponent
-                      boundary="viewport"
-                      content="Reset value"
-                      openOnTargetFocus={false}
-                      position="top-right"
-                    >
-                      <ResetIcon className="w-5 h-5" />
-                    </TooltipComponent>
-                  </button>
-                </>
-              )}
-            </div>
-            <button
-              className={clsx(
-                config.controlType !== "ACTION_SELECTOR" && "hidden",
-                `${config.label}`,
-                "add-action flex items-center justify-center text-center h-7 w-7",
-                isDynamic && "hidden",
-                `t--add-action-${config.label}`,
-              )}
-              disabled={false}
-              onClick={() => setShowEmptyBlock(true)}
-            >
-              <Icon fillColor="#575757" name="plus" size="extraExtraLarge" />
-            </button>
-          </ControlPropertyLabelContainer>
+                </span>
+              </Tooltip>
+            )}
+            {isPropertyDeviatedFromTheme && (
+              <>
+                <Tooltip content="Value deviated from theme">
+                  <StyledDeviated className="w-2 h-2 rounded-full" />
+                </Tooltip>
+                <button
+                  className="hidden ml-auto focus:ring-2 group-hover:block reset-button"
+                  onClick={resetPropertyValueToTheme}
+                >
+                  <Tooltip content="Reset value" placement="topRight">
+                    <ResetIcon className="w-5 h-5" />
+                  </Tooltip>
+                </button>
+              </>
+            )}
+            {!isDynamic && config.controlType === "ACTION_SELECTOR" && (
+              <Button
+                className={clsx(
+                  `${config.label}`,
+                  "add-action flex items-center justify-center text-center h-7 w-7 ml-auto",
+                  `t--add-action-${config.label}`,
+                )}
+                isIconButton
+                kind="tertiary"
+                onClick={() => setShowEmptyBlock(true)}
+                startIcon="plus"
+              />
+            )}
+          </div>
           {PropertyControlFactory.createControl(
             config,
             {

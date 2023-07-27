@@ -3,10 +3,10 @@ import { FILL_WIDGET_MIN_WIDTH } from "constants/minWidthConstants";
 import { ResponsiveBehavior } from "utils/autoLayout/constants";
 import { DynamicHeight } from "utils/WidgetFeatures";
 import { CONFIG as BaseConfig } from "widgets/BaseInputWidget";
-
 import { getDefaultISDCode } from "./component/ISDCodeDropdown";
 import IconSVG from "./icon.svg";
 import Widget from "./widget";
+import { WIDGET_TAGS } from "constants/WidgetConstants";
 
 export const CONFIG = {
   features: {
@@ -19,6 +19,7 @@ export const CONFIG = {
   type: Widget.getWidgetType(),
   name: "Phone Input",
   iconSVG: IconSVG,
+  tags: [WIDGET_TAGS.INPUTS],
   needsMeta: true,
   searchTags: ["call"],
   defaults: {
@@ -41,6 +42,8 @@ export const CONFIG = {
     contentConfig: Widget.getPropertyPaneContentConfig(),
     styleConfig: Widget.getPropertyPaneStyleConfig(),
     stylesheetConfig: Widget.getStylesheetConfig(),
+    autocompleteDefinitions: Widget.getAutocompleteDefinitions(),
+    setterConfig: Widget.getSetterConfig(),
   },
   autoLayout: {
     disabledPropsDefaults: {
@@ -48,7 +51,7 @@ export const CONFIG = {
       labelTextSize: "0.875rem",
     },
     defaults: {
-      rows: 7,
+      rows: 6.6,
     },
     autoDimension: {
       height: true,

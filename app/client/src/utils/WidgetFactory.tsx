@@ -11,8 +11,10 @@ import type { Stylesheet } from "entities/AppTheming";
 import * as log from "loglevel";
 import type { WidgetConfigProps } from "reducers/entityReducers/widgetConfigReducer";
 import type {
+  AutocompletionDefinitions,
   AutoLayoutConfig,
   CanvasWidgetStructure,
+  WidgetMethods,
 } from "widgets/constants";
 import {
   addPropertyConfigIds,
@@ -66,6 +68,9 @@ class WidgetFactory {
   > = new Map();
   static loadingProperties: Map<WidgetType, Array<RegExp>> = new Map();
   static stylesheetConfigMap: Map<WidgetType, Stylesheet> = new Map();
+  static autocompleteDefinitions: Map<WidgetType, AutocompletionDefinitions> =
+    new Map();
+  static setterConfig: Map<WidgetType, Record<string, any>> = new Map();
 
   static widgetConfigMap: Map<
     WidgetType,
@@ -79,6 +84,8 @@ class WidgetFactory {
 
   static autoLayoutConfigMap: Map<WidgetType, AutoLayoutConfig> = new Map();
 
+  static widgetMethodsMap: Map<WidgetType, Record<string, any>> = new Map();
+
   static registerWidgetBuilder(
     widgetType: string,
     widgetBuilder: WidgetBuilder<WidgetProps, WidgetState>,
@@ -91,7 +98,9 @@ class WidgetFactory {
     features?: WidgetFeatures,
     loadingProperties?: Array<RegExp>,
     stylesheetConfig?: Stylesheet,
+    autocompleteDefinitions?: AutocompletionDefinitions,
     autoLayoutConfig?: AutoLayoutConfig,
+    setterConfig?: Record<string, any>,
   ) {
     if (!this.widgetTypes[widgetType]) {
       this.widgetTypes[widgetType] = widgetType;
@@ -106,6 +115,9 @@ class WidgetFactory {
         this.loadingProperties.set(widgetType, loadingProperties);
       stylesheetConfig &&
         this.stylesheetConfigMap.set(widgetType, stylesheetConfig);
+      autocompleteDefinitions &&
+        this.autocompleteDefinitions.set(widgetType, autocompleteDefinitions);
+      setterConfig && this.setterConfig.set(widgetType, setterConfig);
 
       if (Array.isArray(propertyPaneConfig) && propertyPaneConfig.length > 0) {
         const enhancedPropertyPaneConfig = enhancePropertyPaneConfig(
@@ -362,6 +374,26 @@ class WidgetFactory {
     return typeConfigMap;
   }
 
+  static getAutocompleteDefinitions(
+    type: WidgetType,
+  ): AutocompletionDefinitions | undefined {
+    const autocompleteDefinition = this.autocompleteDefinitions.get(type);
+
+    if (!autocompleteDefinition) {
+      log.error("Widget autocomplete properties not defined: ", type);
+    }
+    return autocompleteDefinition;
+  }
+
+  static getWidgetSetterConfig(type: WidgetType): Record<string, any> {
+    const map = this.setterConfig.get(type);
+
+    if (!map) {
+      return {};
+    }
+    return map;
+  }
+
   static getLoadingProperties(type: WidgetType): Array<RegExp> | undefined {
     return this.loadingProperties.get(type);
   }
@@ -373,6 +405,24 @@ class WidgetFactory {
       return undefined;
     }
     return map;
+  }
+
+  static setWidgetMethods(
+    type: WidgetType,
+    methods: Record<string, WidgetMethods>,
+  ) {
+    this.widgetMethodsMap.set(type, methods);
+  }
+
+  static getWidgetMethods(type: WidgetType) {
+    const methods = this.widgetMethodsMap.get(type);
+
+    if (!methods) {
+      log.error("Widget methods are not defined: ", type);
+      return {};
+    }
+
+    return methods;
   }
 }
 

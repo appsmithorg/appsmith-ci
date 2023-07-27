@@ -1,5 +1,5 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import type { ButtonVariant } from "components/constants";
 import type { RenderMode } from "constants/WidgetConstants";
 import { RenderModes } from "constants/WidgetConstants";
@@ -33,6 +33,10 @@ export type ButtonContainerProps = {
   buttonColor?: string;
   buttonVariant?: ButtonVariant;
   disabled?: boolean;
+  shouldFitContent?: boolean;
+  maxWidth?: number;
+  minWidth?: number;
+  minHeight?: number;
   loading?: boolean;
   style?: React.CSSProperties;
 };
@@ -46,13 +50,17 @@ const ButtonContainer = styled.div<ButtonContainerProps>`
     height: 100%;
   }
 
-  .auto-layout & > .bp3-button.bp3-fill {
-    display: flex;
-    width: auto;
-    max-width: 352px;
-    min-width: 112px;
-    min-height: 32px;
-  }
+  ${({ maxWidth, minHeight, minWidth, shouldFitContent }) =>
+    shouldFitContent &&
+    css`
+      .bp3-button.bp3-fill {
+        display: flex;
+        width: auto;
+        ${minWidth ? `min-width: ${minWidth}px;` : ""}
+        ${minHeight ? `min-height: ${minHeight}px;` : ""}
+        ${maxWidth ? `max-width: ${maxWidth}px;` : ""}
+      }
+    `}
 
   position: relative;
   &:after {
@@ -79,19 +87,20 @@ type DragContainerProps = ButtonContainerProps & {
 
 export function DragContainer(props: DragContainerProps) {
   if (props.renderMode === RenderModes.CANVAS || props.showInAllModes) {
+    const hasOnClick = Boolean(
+      props.onClick && !props.disabled && !props.loading,
+    );
     return (
       <ButtonContainer
         buttonColor={props.buttonColor}
         buttonVariant={props.buttonVariant}
         disabled={props.disabled}
         loading={props.loading}
-        onClick={(event) => {
-          if (props.disabled) return;
-          if (props.loading) return;
-          if (props.onClick) {
-            props.onClick(event);
-          }
-        }}
+        maxWidth={props.maxWidth}
+        minHeight={props.minHeight}
+        minWidth={props.minWidth}
+        onClick={hasOnClick ? props.onClick : undefined}
+        shouldFitContent={props.shouldFitContent}
         style={props.style}
       >
         {props.children}

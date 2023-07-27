@@ -1,4 +1,11 @@
-import { areArraysEqual, getCamelCaseString } from "utils/AppsmithUtils";
+import {
+  areArraysEqual,
+  createBlobUrl,
+  DataType,
+  getCamelCaseString,
+  getDatatype,
+  parseBlobUrl,
+} from "utils/AppsmithUtils";
 import { isURL } from "./TypeHelpers";
 
 describe("getCamelCaseString", () => {
@@ -54,5 +61,69 @@ describe("isURL", () => {
     expect(isURL("http://localhost:port")).toBe(false);
     expect(isURL("notAURL")).toBe(false);
     expect(isURL("httpsnotAURL")).toBe(false);
+  });
+});
+
+describe("createBlobUrl", () => {
+  beforeEach(() => {
+    URL.createObjectURL = jest
+      .fn()
+      .mockReturnValue(`blob:${window.location.origin}/123-123-123-123-123`);
+  });
+
+  it("should test that it created correct blob URL", () => {
+    expect(createBlobUrl(new Blob(), "base64")).toMatch(
+      /blob:[a-z0-9-]*\?type=base64/,
+    );
+
+    expect(createBlobUrl(new Blob(), "raw")).toMatch(
+      /blob:[a-z0-9-]*\?type=raw/,
+    );
+  });
+});
+
+describe("parseBlobUrl", () => {
+  it("should test that it created correct blob URL", () => {
+    expect(parseBlobUrl("blob:123-123?type=base")).toEqual([
+      `blob:${window.location.origin}/123-123`,
+      "base",
+    ]);
+
+    expect(parseBlobUrl("blob:123-123?type=raw")).toEqual([
+      `blob:${window.location.origin}/123-123`,
+      "raw",
+    ]);
+  });
+});
+
+describe("getDatatype - should test the datatypes", () => {
+  it("1. String", () => {
+    expect(getDatatype("test")).toBe(DataType.STRING);
+  });
+
+  it("2. Number", () => {
+    [1, NaN].forEach((d) => {
+      expect(getDatatype(d)).toBe(DataType.NUMBER);
+    });
+  });
+
+  it("3. Boolean", () => {
+    [true, false].forEach((d) => {
+      expect(getDatatype(d)).toBe(DataType.BOOLEAN);
+    });
+  });
+
+  it("4. Object", () => {
+    expect(getDatatype({})).toBe(DataType.OBJECT);
+  });
+
+  it("5. Array", () => {
+    expect(getDatatype([])).toBe(DataType.ARRAY);
+  });
+
+  it("6. Rest of the types", () => {
+    expect(getDatatype(null)).toBe(DataType.NULL);
+
+    expect(getDatatype(undefined)).toBe(DataType.UNDEFINED);
   });
 });

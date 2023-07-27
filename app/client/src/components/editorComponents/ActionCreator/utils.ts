@@ -22,10 +22,12 @@ import {
 } from "@shared/ast";
 import type { TreeDropdownOption } from "design-system-old";
 import type { TActionBlock } from "./types";
-import { AppsmithFunction, DEFAULT_LABELS } from "./constants";
+import { AppsmithFunction, DEFAULT_LABELS, FieldType } from "./constants";
 import { FIELD_GROUP_CONFIG } from "./FieldGroup/FieldGroupConfig";
 import store from "store";
 import { selectEvaluationVersion } from "@appsmith/selectors/applicationSelectors";
+import { FIELD_CONFIG } from "./Field/FieldConfig";
+import { setGenericArgAtPostition } from "@shared/ast/src/actionCreator";
 
 export const stringToJS = (string: string): string => {
   const { jsSnippets, stringSegments } = getDynamicBindings(string);
@@ -214,6 +216,17 @@ export const callBackFieldGetter = (value: string, argNumber = 0) => {
   return `{{${funcExpr}}}`;
 };
 
+export const genericSetter = (
+  codeFragment: string,
+  code: string,
+  argNum = 0,
+) => {
+  codeFragment = codeFragment ? stringToJS(codeFragment) : "''";
+  code = getCodeFromMoustache(code);
+  const funcExpr = setGenericArgAtPostition(codeFragment, code, argNum);
+  return `{{${funcExpr}}}`;
+};
+
 /*
  * This function extracts the 1st string argument from value
  * and determines if the string is a valid url
@@ -250,18 +263,9 @@ export function getSelectedFieldFromValue(
 ): TreeDropdownOption {
   const allOptions = flattenOptions(fieldOptions);
 
-  const includedFields = allOptions.filter((option) => {
-    return value.includes(option.value);
-  });
-
-  const matches = includedFields.map((option) => ({
-    option,
-    index: value.indexOf(option.value),
-  }));
-
-  const sortedMatches = matches.sort((a, b) => a.index - b.index);
-
-  const selectedField = sortedMatches[0]?.option;
+  const selectedField = allOptions.find((option) =>
+    value.startsWith(option.value),
+  );
 
   const noActionFieldConfig = FIELD_GROUP_CONFIG[AppsmithFunction.none];
   const noActionOption: TreeDropdownOption = {
@@ -290,6 +294,15 @@ export function codeToAction(
 
   if (strict) {
     if (mainActionType === AppsmithFunction.none) {
+      throw new Error("Invalid action detected");
+    }
+
+    // In the action selector field, if we can't find the selected option,
+    // it means, we can't render that action correctly in the UI
+    const fieldConfig = FIELD_CONFIG[FieldType.ACTION_SELECTOR_FIELD];
+    const selectedOptionValue = fieldConfig.getter(jsCode);
+
+    if (!selectedOptionValue) {
       throw new Error("Invalid action detected");
     }
   }
@@ -440,8 +453,8 @@ export function actionToCode(
     const existingErrorCallback =
       supportsCallback &&
       getFuncExpressionAtPosition(code, 1, evaluationVersion);
-    const thenBlockExists = checkIfCatchBlockExists(code, evaluationVersion);
-    const catchBlockExists = checkIfThenBlockExists(code, evaluationVersion);
+    const thenBlockExists = checkIfThenBlockExists(code, evaluationVersion);
+    const catchBlockExists = checkIfCatchBlockExists(code, evaluationVersion);
     if (actionType === AppsmithFunction.integration) {
       if (existingSuccessCallback || existingErrorCallback) {
         successBlocks.forEach((block) => {
@@ -549,7 +562,8 @@ export function isEmptyBlock(block: string) {
 
 /** {{Hello {{Input.text}}}} -> Hello {{Input.text}} */
 export function getCodeFromMoustache(value = "") {
-  const code = value.replace(/^{{|}}$/g, "");
+  // Remove white spaces around the braces, otherwise the regex will fail
+  const code = value.trim().replace(/^{{|}}$/g, "");
   return code;
 }
 

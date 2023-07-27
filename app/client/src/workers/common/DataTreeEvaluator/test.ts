@@ -1,10 +1,6 @@
 import DataTreeEvaluator from ".";
-import {
-  asyncTagUnevalTree,
-  lintingUnEvalTree,
-  unEvalTree,
-} from "./mockData/mockUnEvalTree";
-import { configTree, lintingConfigTree } from "./mockData/mockConfigTree";
+import { asyncTagUnevalTree, unEvalTree } from "./mockData/mockUnEvalTree";
+import { configTree } from "./mockData/mockConfigTree";
 import type { DataTree, ConfigTree } from "entities/DataTree/dataTreeFactory";
 import type { DataTreeDiff } from "@appsmith/workers/Evaluation/evaluationUtils";
 import { ALL_WIDGETS_AND_CONFIG } from "utils/WidgetRegistry";
@@ -18,9 +14,10 @@ import {
 } from "./mockData/NestedArrayAccessorTree";
 import { updateDependencyMap } from "workers/common/DependencyMap";
 import { parseJSActions } from "workers/Evaluation/JSObject";
-import type { ActionEntityConfig } from "entities/DataTree/types";
 import type { WidgetConfiguration } from "widgets/constants";
 import { setEvalContext } from "workers/Evaluation/evaluate";
+import { replaceThisDotParams } from "./utils";
+import { isDataField } from "./utils";
 
 const widgetConfigMap: Record<
   string,
@@ -532,101 +529,610 @@ describe("DataTreeEvaluator", () => {
       });
     });
   });
+});
 
-  describe("triggerfield dependency map", () => {
-    beforeEach(() => {
-      dataTreeEvaluator.setupFirstTree(
-        lintingUnEvalTree as unknown as DataTree,
-        lintingConfigTree as unknown as ConfigTree,
+describe("replaceThisDotParams", () => {
+  describe("no optional chaining this.params", () => {
+    it("1. IIFEE with function keyword", () => {
+      const code = "{{ (function() { return this.params.condition })() }}";
+      const replaced = replaceThisDotParams(code);
+
+      expect(replaced).toBe(
+        "{{ (function() { return $params.condition })() }}",
       );
-      dataTreeEvaluator.evalAndValidateFirstTree();
-    });
-    it("Creates correct triggerFieldDependencyMap", () => {
-      expect(dataTreeEvaluator.triggerFieldDependencyMap).toEqual({
-        "Button3.onClick": ["Api1.run", "Button2.text", "Api2.run"],
-        "Button2.onClick": ["Api2.run"],
-      });
     });
 
-    it("Correctly updates triggerFieldDependencyMap", () => {
-      const newUnEvalTree = { ...lintingUnEvalTree } as unknown as DataTree;
-      const newConfigTree = { ...lintingConfigTree } as unknown as ConfigTree;
-      // delete Api2
-      delete newUnEvalTree["Api2"];
-      delete newConfigTree["Api2"];
-      const {
-        evalOrder,
-        nonDynamicFieldValidationOrder: nonDynamicFieldValidationOrder2,
-        unEvalUpdates,
-      } = dataTreeEvaluator.setupUpdateTree(newUnEvalTree, newConfigTree);
-      dataTreeEvaluator.evalAndValidateSubTree(
-        evalOrder,
-        nonDynamicFieldValidationOrder2,
-        newConfigTree,
-        unEvalUpdates,
-      );
-      expect(dataTreeEvaluator.triggerFieldDependencyMap).toEqual({
-        "Button3.onClick": ["Api1.run", "Button2.text"],
-        "Button2.onClick": [],
-      });
+    it("2. IIFEE with arrow function", () => {
+      const code = "{{ (() => { return this.params.condition })() }}";
+      const replaced = replaceThisDotParams(code);
 
-      // Add Api2
-      // @ts-expect-error: Types are not available
-      newUnEvalTree["Api2"] = { ...lintingUnEvalTree }["Api2"];
-      newConfigTree["Api2"] = { ...lintingConfigTree }[
-        "Api2"
-      ] as ActionEntityConfig;
-      const {
-        evalOrder: order1,
-        nonDynamicFieldValidationOrder: nonDynamicFieldValidationOrder3,
-        unEvalUpdates: unEvalUpdates2,
-      } = dataTreeEvaluator.setupUpdateTree(newUnEvalTree, newConfigTree);
-      dataTreeEvaluator.evalAndValidateSubTree(
-        order1,
-        nonDynamicFieldValidationOrder3,
-        newConfigTree,
-        unEvalUpdates2,
-      );
-      expect(dataTreeEvaluator.triggerFieldDependencyMap).toEqual({
-        "Button3.onClick": ["Api1.run", "Button2.text", "Api2.run"],
-        "Button2.onClick": ["Api2.run"],
-      });
-
-      // // self-reference Button2
-      const newButton2 = { ...lintingUnEvalTree }["Button2"];
-      newButton2.onClick = "{{Api2.run(); AbsentEntity.run(); Button2}}";
-      // @ts-expect-error: Types are not available
-      newUnEvalTree["Button2"] = newButton2;
-      const {
-        evalOrder: order2,
-        nonDynamicFieldValidationOrder,
-        unEvalUpdates: unEvalUpdates3,
-      } = dataTreeEvaluator.setupUpdateTree(newUnEvalTree, newConfigTree);
-      dataTreeEvaluator.evalAndValidateSubTree(
-        order2,
-        nonDynamicFieldValidationOrder,
-        newConfigTree,
-        unEvalUpdates3,
-      );
-
-      // delete Button2
-      delete newUnEvalTree["Button2"];
-      delete newConfigTree["Button2"];
-      const {
-        evalOrder: order3,
-        nonDynamicFieldValidationOrder: nonDynamicFieldValidationOrder4,
-        unEvalUpdates: unEvalUpdates4,
-      } = dataTreeEvaluator.setupUpdateTree(newUnEvalTree, newConfigTree);
-      dataTreeEvaluator.evalAndValidateSubTree(
-        order3,
-        nonDynamicFieldValidationOrder4,
-        newConfigTree,
-        unEvalUpdates4,
-      );
-
-      expect(dataTreeEvaluator.triggerFieldDependencyMap).toEqual({
-        "Button3.onClick": ["Api1.run", "Api2.run"],
-      });
+      expect(replaced).toBe("{{ (() => { return $params.condition })() }}");
     });
+
+    it("3. normal binding", () => {
+      const code = "{{ this.params.condition }}";
+      const replaced = replaceThisDotParams(code);
+
+      expect(replaced).toBe("{{ $params.condition }}");
+    });
+  });
+
+  describe("optional chaining this?.params", () => {
+    it("1. IIFEE with function keyword", () => {
+      const code = "{{ (function() { return this?.params.condition })() }}";
+      const replaced = replaceThisDotParams(code);
+
+      expect(replaced).toBe(
+        "{{ (function() { return $params.condition })() }}",
+      );
+    });
+
+    it("2. IIFEE with arrow function", () => {
+      const code = "{{ (() => { return this?.params.condition })() }}";
+      const replaced = replaceThisDotParams(code);
+
+      expect(replaced).toBe("{{ (() => { return $params.condition })() }}");
+    });
+
+    it("3. normal binding", () => {
+      const code = "{{ this?.params.condition }}";
+      const replaced = replaceThisDotParams(code);
+
+      expect(replaced).toBe("{{ $params.condition }}");
+    });
+  });
+
+  describe("optional chaining this?.params?.condition", () => {
+    it("1. IIFEE with function keyword", () => {
+      const code = "{{ (function() { return this?.params?.condition })() }}";
+      const replaced = replaceThisDotParams(code);
+
+      expect(replaced).toBe(
+        "{{ (function() { return $params?.condition })() }}",
+      );
+    });
+
+    it("2. IIFEE with arrow function", () => {
+      const code = "{{ (() => { return this?.params?.condition })() }}";
+      const replaced = replaceThisDotParams(code);
+
+      expect(replaced).toBe("{{ (() => { return $params?.condition })() }}");
+    });
+
+    it("3. normal binding", () => {
+      const code = "{{ this?.params?.condition }}";
+      const replaced = replaceThisDotParams(code);
+
+      expect(replaced).toBe("{{ $params?.condition }}");
+    });
+  });
+});
+
+describe("isDataField", () => {
+  const configTree = {
+    JSObject1: {
+      actionId: "642d384a630f4634e27a67ff",
+      meta: {
+        myFun2: {
+          arguments: [],
+          isAsync: true,
+          confirmBeforeExecute: false,
+        },
+        myFun1: {
+          arguments: [],
+          isAsync: true,
+          confirmBeforeExecute: false,
+        },
+      },
+      name: "JSObject1",
+      pluginType: "JS",
+      ENTITY_TYPE: "JSACTION",
+      bindingPaths: {
+        body: "SMART_SUBSTITUTE",
+        superbaseClient: "SMART_SUBSTITUTE",
+        myVar2: "SMART_SUBSTITUTE",
+        myFun2: "SMART_SUBSTITUTE",
+        myFun1: "SMART_SUBSTITUTE",
+      },
+      reactivePaths: {
+        body: "SMART_SUBSTITUTE",
+        superbaseClient: "SMART_SUBSTITUTE",
+        myVar2: "SMART_SUBSTITUTE",
+        myFun2: "SMART_SUBSTITUTE",
+        myFun1: "SMART_SUBSTITUTE",
+      },
+      dynamicBindingPathList: [
+        {
+          key: "body",
+        },
+        {
+          key: "superbaseClient",
+        },
+        {
+          key: "myVar2",
+        },
+        {
+          key: "myFun2",
+        },
+        {
+          key: "myFun1",
+        },
+      ],
+      variables: ["superbaseClient", "myVar2"],
+      dependencyMap: {
+        body: ["myFun2", "myFun1"],
+      },
+    },
+    JSObject2: {
+      actionId: "644242aeadc0936a9b0e71cc",
+      meta: {
+        myFun2: {
+          arguments: [],
+          isAsync: true,
+          confirmBeforeExecute: false,
+        },
+        myFun1: {
+          arguments: [],
+          isAsync: true,
+          confirmBeforeExecute: false,
+        },
+      },
+      name: "JSObject2",
+      pluginType: "JS",
+      ENTITY_TYPE: "JSACTION",
+      bindingPaths: {
+        body: "SMART_SUBSTITUTE",
+        supabaseClient: "SMART_SUBSTITUTE",
+        myVar2: "SMART_SUBSTITUTE",
+        myFun2: "SMART_SUBSTITUTE",
+        myFun1: "SMART_SUBSTITUTE",
+      },
+      reactivePaths: {
+        body: "SMART_SUBSTITUTE",
+        supabaseClient: "SMART_SUBSTITUTE",
+        myVar2: "SMART_SUBSTITUTE",
+        myFun2: "SMART_SUBSTITUTE",
+        myFun1: "SMART_SUBSTITUTE",
+      },
+      dynamicBindingPathList: [
+        {
+          key: "body",
+        },
+        {
+          key: "supabaseClient",
+        },
+        {
+          key: "myVar2",
+        },
+        {
+          key: "myFun2",
+        },
+        {
+          key: "myFun1",
+        },
+      ],
+      variables: ["supabaseClient", "myVar2"],
+      dependencyMap: {
+        body: ["myFun2", "myFun1"],
+      },
+    },
+    MainContainer: {
+      defaultProps: {},
+      defaultMetaProps: [],
+      dynamicBindingPathList: [],
+      logBlackList: {},
+      bindingPaths: {},
+      reactivePaths: {},
+      triggerPaths: {},
+      validationPaths: {},
+      ENTITY_TYPE: "WIDGET",
+      privateWidgets: {},
+      propertyOverrideDependency: {},
+      overridingPropertyPaths: {},
+      type: "CANVAS_WIDGET",
+      dynamicTriggerPathList: [],
+      isMetaPropDirty: false,
+      widgetId: "0",
+    },
+    Button1: {
+      defaultProps: {},
+      defaultMetaProps: ["recaptchaToken"],
+      dynamicBindingPathList: [
+        {
+          key: "buttonColor",
+        },
+        {
+          key: "borderRadius",
+        },
+        {
+          key: "text",
+        },
+      ],
+      logBlackList: {},
+      bindingPaths: {
+        text: "TEMPLATE",
+        tooltip: "TEMPLATE",
+        isVisible: "TEMPLATE",
+        isDisabled: "TEMPLATE",
+        animateLoading: "TEMPLATE",
+        googleRecaptchaKey: "TEMPLATE",
+        recaptchaType: "TEMPLATE",
+        disabledWhenInvalid: "TEMPLATE",
+        resetFormOnClick: "TEMPLATE",
+        buttonVariant: "TEMPLATE",
+        iconName: "TEMPLATE",
+        placement: "TEMPLATE",
+        buttonColor: "TEMPLATE",
+        borderRadius: "TEMPLATE",
+        boxShadow: "TEMPLATE",
+      },
+      reactivePaths: {
+        recaptchaToken: "TEMPLATE",
+        buttonColor: "TEMPLATE",
+        borderRadius: "TEMPLATE",
+        text: "TEMPLATE",
+        tooltip: "TEMPLATE",
+        isVisible: "TEMPLATE",
+        isDisabled: "TEMPLATE",
+        animateLoading: "TEMPLATE",
+        googleRecaptchaKey: "TEMPLATE",
+        recaptchaType: "TEMPLATE",
+        disabledWhenInvalid: "TEMPLATE",
+        resetFormOnClick: "TEMPLATE",
+        buttonVariant: "TEMPLATE",
+        iconName: "TEMPLATE",
+        placement: "TEMPLATE",
+        boxShadow: "TEMPLATE",
+      },
+      triggerPaths: {
+        onClick: true,
+      },
+      validationPaths: {
+        text: {
+          type: "TEXT",
+        },
+        tooltip: {
+          type: "TEXT",
+        },
+        isVisible: {
+          type: "BOOLEAN",
+        },
+        isDisabled: {
+          type: "BOOLEAN",
+        },
+        animateLoading: {
+          type: "BOOLEAN",
+        },
+        googleRecaptchaKey: {
+          type: "TEXT",
+        },
+        recaptchaType: {
+          type: "TEXT",
+          params: {
+            allowedValues: ["V3", "V2"],
+            default: "V3",
+          },
+        },
+        disabledWhenInvalid: {
+          type: "BOOLEAN",
+        },
+        resetFormOnClick: {
+          type: "BOOLEAN",
+        },
+        buttonVariant: {
+          type: "TEXT",
+          params: {
+            allowedValues: ["PRIMARY", "SECONDARY", "TERTIARY"],
+            default: "PRIMARY",
+          },
+        },
+        iconName: {
+          type: "TEXT",
+        },
+        placement: {
+          type: "TEXT",
+          params: {
+            allowedValues: ["START", "BETWEEN", "CENTER"],
+            default: "CENTER",
+          },
+        },
+        buttonColor: {
+          type: "TEXT",
+        },
+        borderRadius: {
+          type: "TEXT",
+        },
+        boxShadow: {
+          type: "TEXT",
+        },
+      },
+      ENTITY_TYPE: "WIDGET",
+      privateWidgets: {},
+      propertyOverrideDependency: {},
+      overridingPropertyPaths: {},
+      type: "BUTTON_WIDGET",
+      dynamicTriggerPathList: [],
+      isMetaPropDirty: false,
+      widgetId: "19ih8rt2eo",
+    },
+    Button2: {
+      defaultProps: {},
+      defaultMetaProps: ["recaptchaToken"],
+      dynamicBindingPathList: [
+        {
+          key: "buttonColor",
+        },
+        {
+          key: "borderRadius",
+        },
+      ],
+      logBlackList: {},
+      bindingPaths: {
+        text: "TEMPLATE",
+        tooltip: "TEMPLATE",
+        isVisible: "TEMPLATE",
+        isDisabled: "TEMPLATE",
+        animateLoading: "TEMPLATE",
+        googleRecaptchaKey: "TEMPLATE",
+        recaptchaType: "TEMPLATE",
+        disabledWhenInvalid: "TEMPLATE",
+        resetFormOnClick: "TEMPLATE",
+        buttonVariant: "TEMPLATE",
+        iconName: "TEMPLATE",
+        placement: "TEMPLATE",
+        buttonColor: "TEMPLATE",
+        borderRadius: "TEMPLATE",
+        boxShadow: "TEMPLATE",
+      },
+      reactivePaths: {
+        recaptchaToken: "TEMPLATE",
+        buttonColor: "TEMPLATE",
+        borderRadius: "TEMPLATE",
+        text: "TEMPLATE",
+        tooltip: "TEMPLATE",
+        isVisible: "TEMPLATE",
+        isDisabled: "TEMPLATE",
+        animateLoading: "TEMPLATE",
+        googleRecaptchaKey: "TEMPLATE",
+        recaptchaType: "TEMPLATE",
+        disabledWhenInvalid: "TEMPLATE",
+        resetFormOnClick: "TEMPLATE",
+        buttonVariant: "TEMPLATE",
+        iconName: "TEMPLATE",
+        placement: "TEMPLATE",
+        boxShadow: "TEMPLATE",
+      },
+      triggerPaths: {
+        onClick: true,
+      },
+      validationPaths: {
+        text: {
+          type: "TEXT",
+        },
+        tooltip: {
+          type: "TEXT",
+        },
+        isVisible: {
+          type: "BOOLEAN",
+        },
+        isDisabled: {
+          type: "BOOLEAN",
+        },
+        animateLoading: {
+          type: "BOOLEAN",
+        },
+        googleRecaptchaKey: {
+          type: "TEXT",
+        },
+        recaptchaType: {
+          type: "TEXT",
+          params: {
+            allowedValues: ["V3", "V2"],
+            default: "V3",
+          },
+        },
+        disabledWhenInvalid: {
+          type: "BOOLEAN",
+        },
+        resetFormOnClick: {
+          type: "BOOLEAN",
+        },
+        buttonVariant: {
+          type: "TEXT",
+          params: {
+            allowedValues: ["PRIMARY", "SECONDARY", "TERTIARY"],
+            default: "PRIMARY",
+          },
+        },
+        iconName: {
+          type: "TEXT",
+        },
+        placement: {
+          type: "TEXT",
+          params: {
+            allowedValues: ["START", "BETWEEN", "CENTER"],
+            default: "CENTER",
+          },
+        },
+        buttonColor: {
+          type: "TEXT",
+        },
+        borderRadius: {
+          type: "TEXT",
+        },
+        boxShadow: {
+          type: "TEXT",
+        },
+      },
+      ENTITY_TYPE: "WIDGET",
+      privateWidgets: {},
+      propertyOverrideDependency: {},
+      overridingPropertyPaths: {},
+      type: "BUTTON_WIDGET",
+      dynamicPropertyPathList: [
+        {
+          key: "onClick",
+        },
+      ],
+      dynamicTriggerPathList: [
+        {
+          key: "onClick",
+        },
+      ],
+      isMetaPropDirty: false,
+      widgetId: "vss3w1eecd",
+    },
+    Button3: {
+      defaultProps: {},
+      defaultMetaProps: ["recaptchaToken"],
+      dynamicBindingPathList: [
+        {
+          key: "buttonColor",
+        },
+        {
+          key: "borderRadius",
+        },
+      ],
+      logBlackList: {},
+      bindingPaths: {
+        text: "TEMPLATE",
+        tooltip: "TEMPLATE",
+        isVisible: "TEMPLATE",
+        isDisabled: "TEMPLATE",
+        animateLoading: "TEMPLATE",
+        googleRecaptchaKey: "TEMPLATE",
+        recaptchaType: "TEMPLATE",
+        disabledWhenInvalid: "TEMPLATE",
+        resetFormOnClick: "TEMPLATE",
+        buttonVariant: "TEMPLATE",
+        iconName: "TEMPLATE",
+        placement: "TEMPLATE",
+        buttonColor: "TEMPLATE",
+        borderRadius: "TEMPLATE",
+        boxShadow: "TEMPLATE",
+      },
+      reactivePaths: {
+        recaptchaToken: "TEMPLATE",
+        buttonColor: "TEMPLATE",
+        borderRadius: "TEMPLATE",
+        text: "TEMPLATE",
+        tooltip: "TEMPLATE",
+        isVisible: "TEMPLATE",
+        isDisabled: "TEMPLATE",
+        animateLoading: "TEMPLATE",
+        googleRecaptchaKey: "TEMPLATE",
+        recaptchaType: "TEMPLATE",
+        disabledWhenInvalid: "TEMPLATE",
+        resetFormOnClick: "TEMPLATE",
+        buttonVariant: "TEMPLATE",
+        iconName: "TEMPLATE",
+        placement: "TEMPLATE",
+        boxShadow: "TEMPLATE",
+      },
+      triggerPaths: {
+        onClick: true,
+      },
+      validationPaths: {
+        text: {
+          type: "TEXT",
+        },
+        tooltip: {
+          type: "TEXT",
+        },
+        isVisible: {
+          type: "BOOLEAN",
+        },
+        isDisabled: {
+          type: "BOOLEAN",
+        },
+        animateLoading: {
+          type: "BOOLEAN",
+        },
+        googleRecaptchaKey: {
+          type: "TEXT",
+        },
+        recaptchaType: {
+          type: "TEXT",
+          params: {
+            allowedValues: ["V3", "V2"],
+            default: "V3",
+          },
+        },
+        disabledWhenInvalid: {
+          type: "BOOLEAN",
+        },
+        resetFormOnClick: {
+          type: "BOOLEAN",
+        },
+        buttonVariant: {
+          type: "TEXT",
+          params: {
+            allowedValues: ["PRIMARY", "SECONDARY", "TERTIARY"],
+            default: "PRIMARY",
+          },
+        },
+        iconName: {
+          type: "TEXT",
+        },
+        placement: {
+          type: "TEXT",
+          params: {
+            allowedValues: ["START", "BETWEEN", "CENTER"],
+            default: "CENTER",
+          },
+        },
+        buttonColor: {
+          type: "TEXT",
+        },
+        borderRadius: {
+          type: "TEXT",
+        },
+        boxShadow: {
+          type: "TEXT",
+        },
+      },
+      ENTITY_TYPE: "WIDGET",
+      privateWidgets: {},
+      propertyOverrideDependency: {},
+      overridingPropertyPaths: {},
+      type: "BUTTON_WIDGET",
+      dynamicPropertyPathList: [
+        {
+          key: "onClick",
+        },
+      ],
+      dynamicTriggerPathList: [
+        {
+          key: "onClick",
+        },
+      ],
+      isMetaPropDirty: false,
+      widgetId: "pzom2ufg3b",
+    },
+  } as ConfigTree;
+  it("doesn't crash when config tree is empty", () => {
+    const isADataField = isDataField("appsmith.store", {});
+    expect(isADataField).toBe(false);
+  });
+  it("works correctly", function () {
+    const testCases = [
+      {
+        fullPath: "Button1.text",
+        isDataField: true,
+      },
+      {
+        fullPath: "appsmith.store",
+        isDataField: false,
+      },
+      {
+        fullPath: "JSObject2.body",
+        isDataField: false,
+      },
+    ];
+
+    for (const testCase of testCases) {
+      const isADataField = isDataField(testCase.fullPath, configTree);
+      expect(isADataField).toBe(testCase.isDataField);
+    }
   });
 });

@@ -1,4 +1,4 @@
-import type { TriggerMeta } from "ce/sagas/ActionExecution/ActionExecutionSagas";
+import type { TriggerMeta } from "@appsmith/sagas/ActionExecution/ActionExecutionSagas";
 import type {
   EventType,
   TriggerSource,
@@ -23,11 +23,13 @@ export default class ExecutionMetaData {
     }
   }
   static getExecutionMetaData() {
-    const { source, triggerPropertyName } = ExecutionMetaData.triggerMeta || {};
+    const { source, triggerKind, triggerPropertyName } =
+      ExecutionMetaData.triggerMeta || {};
     return {
       triggerMeta: {
         source: { ...source } as TriggerSource,
         triggerPropertyName,
+        triggerKind,
       },
       eventType: ExecutionMetaData.eventType,
       enableJSVarUpdateTracking: ExecutionMetaData.enableJSVarUpdateTracking,

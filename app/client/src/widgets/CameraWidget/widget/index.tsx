@@ -9,12 +9,27 @@ import type { WidgetProps, WidgetState } from "widgets/BaseWidget";
 import BaseWidget from "widgets/BaseWidget";
 import { FileDataTypes } from "widgets/constants";
 
-import type { Stylesheet } from "entities/AppTheming";
+import type { SetterConfig, Stylesheet } from "entities/AppTheming";
 import CameraComponent from "../component";
 import type { CameraMode } from "../constants";
 import { CameraModeTypes, MediaCaptureStatusTypes } from "../constants";
+import type { AutocompletionDefinitions } from "widgets/constants";
 
 class CameraWidget extends BaseWidget<CameraWidgetProps, WidgetState> {
+  static getAutocompleteDefinitions(): AutocompletionDefinitions {
+    return {
+      "!doc":
+        "Camera widget allows users to take a picture or record videos through their system camera using browser permissions.",
+      "!url": "https://docs.appsmith.com/widget-reference/camera",
+      imageBlobURL: "string",
+      imageDataURL: "string",
+      imageRawBinary: "string",
+      videoBlobURL: "string",
+      videoDataURL: "string",
+      videoRawBinary: "string",
+    };
+  }
+
   static getPropertyPaneContentConfig() {
     return [
       {
@@ -24,6 +39,7 @@ class CameraWidget extends BaseWidget<CameraWidgetProps, WidgetState> {
             propertyName: "mode",
             label: "Mode",
             controlType: "ICON_TABS",
+            defaultValue: "CAMERA",
             fullWidth: true,
             helpText: "Whether a picture is taken or a video is recorded",
             options: [
@@ -146,11 +162,11 @@ class CameraWidget extends BaseWidget<CameraWidgetProps, WidgetState> {
   static getPropertyPaneStyleConfig() {
     return [
       {
-        sectionName: "Border and Shadow",
+        sectionName: "Border and shadow",
         children: [
           {
             propertyName: "borderRadius",
-            label: "Border Radius",
+            label: "Border radius",
             helpText:
               "Rounds the corners of the icon button's outer border edge",
             controlType: "BORDER_RADIUS_OPTIONS",
@@ -161,7 +177,7 @@ class CameraWidget extends BaseWidget<CameraWidgetProps, WidgetState> {
           },
           {
             propertyName: "boxShadow",
-            label: "Box Shadow",
+            label: "Box shadow",
             helpText:
               "Enables you to cast a drop shadow from the frame of the widget",
             controlType: "BOX_SHADOW_OPTIONS",
@@ -206,6 +222,21 @@ class CameraWidget extends BaseWidget<CameraWidgetProps, WidgetState> {
 
   static getWidgetType(): string {
     return "CAMERA_WIDGET";
+  }
+
+  static getSetterConfig(): SetterConfig {
+    return {
+      __setters: {
+        setVisibility: {
+          path: "isVisible",
+          type: "boolean",
+        },
+        setDisabled: {
+          path: "isDisabled",
+          type: "boolean",
+        },
+      },
+    };
   }
 
   getPageView() {

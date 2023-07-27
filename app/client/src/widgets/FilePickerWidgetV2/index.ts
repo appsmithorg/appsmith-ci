@@ -1,14 +1,15 @@
 import { BUTTON_MIN_WIDTH } from "constants/minWidthConstants";
 import { ResponsiveBehavior } from "utils/autoLayout/constants";
-
 import FileDataTypes from "./constants";
 import IconSVG from "./icon.svg";
 import Widget from "./widget";
+import { WIDGET_TAGS } from "constants/WidgetConstants";
 
 export const CONFIG = {
   type: Widget.getWidgetType(),
   name: "FilePicker",
   iconSVG: IconSVG,
+  tags: [WIDGET_TAGS.INPUTS],
   needsMeta: true,
   searchTags: ["upload"],
   defaults: {
@@ -39,6 +40,8 @@ export const CONFIG = {
     styleConfig: Widget.getPropertyPaneStyleConfig(),
     contentConfig: Widget.getPropertyPaneContentConfig(),
     stylesheetConfig: Widget.getStylesheetConfig(),
+    autocompleteDefinitions: Widget.getAutocompleteDefinitions(),
+    setterConfig: Widget.getSetterConfig(),
   },
   autoLayout: {
     defaults: {
@@ -55,6 +58,7 @@ export const CONFIG = {
           return {
             minWidth: "120px",
             maxWidth: "360px",
+            minHeight: "40px",
           };
         },
       },

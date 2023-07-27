@@ -18,6 +18,7 @@ import { getLogToSentryFromResponse } from "utils/helpers";
 import { validateResponse } from "./ErrorSagas";
 import { updateApplicationLayoutType } from "./AutoLayoutUpdateSagas";
 import { AppPositioningTypes } from "reducers/entityReducers/pageListReducer";
+import AnalyticsUtil from "utils/AnalyticsUtil";
 
 //Saga to create application snapshot
 export function* createSnapshotSaga() {
@@ -73,7 +74,13 @@ export function* fetchSnapshotSaga() {
 //Saga to restore application snapshot
 function* restoreApplicationFromSnapshotSaga() {
   let response: ApiResponse<any> | undefined;
+  let appId = "";
   try {
+    appId = yield select(getCurrentApplicationId);
+    AnalyticsUtil.logEvent("RESTORE_SNAPSHOT", {
+      appId,
+    });
+
     const applicationId: string = yield select(getCurrentApplicationId);
     response = yield ApplicationApi.restoreApplicationFromSnapshot({
       applicationId,
@@ -117,18 +124,29 @@ function* restoreApplicationFromSnapshotSaga() {
         setLayoutConversionStateAction(CONVERSION_STATES.COMPLETED_SUCCESS),
       );
     }
-  } catch (error) {
+  } catch (e: any) {
+    let error: Error = e;
+    if (error) {
+      error.message = `Layout conversion error - while restoring snapshot: ${error.message}`;
+    } else {
+      error = new Error("Layout conversion error - while restoring snapshot");
+    }
+
     log.error(error);
     //update conversion form state to error
     yield put(
-      setLayoutConversionStateAction(CONVERSION_STATES.COMPLETED_ERROR),
+      setLayoutConversionStateAction(CONVERSION_STATES.COMPLETED_ERROR, error),
     );
-    throw error;
+
+    AnalyticsUtil.logEvent("CONVERSION_FAILURE", {
+      flow: "RESTORE_SNAPSHOT",
+      appId,
+    });
   }
 }
 
 //Saga to delete application snapshot
-function* deleteApplicationSnapshotSaga() {
+export function* deleteApplicationSnapshotSaga() {
   let response: ApiResponse | undefined;
   try {
     const applicationId: string = yield select(getCurrentApplicationId);
@@ -159,7 +177,7 @@ function* updateSnapshotDetailsSaga() {
     );
     yield put(
       updateSnapshotDetails(
-        snapShotDetails
+        snapShotDetails && snapShotDetails.updatedTime
           ? { lastUpdatedTime: snapShotDetails.updatedTime?.toString() }
           : undefined,
       ),
@@ -177,8 +195,7 @@ export default function* snapshotSagas() {
     ),
     takeLatest(
       [
-        ReduxActionTypes.INIT_CANVAS_LAYOUT,
-        ReduxActionTypes.FETCH_SNAPSHOT,
+        ReduxActionTypes.FETCH_LAYOUT_SNAPSHOT_DETAILS,
         ReduxActionTypes.START_CONVERSION_FLOW,
       ],
       updateSnapshotDetailsSaga,

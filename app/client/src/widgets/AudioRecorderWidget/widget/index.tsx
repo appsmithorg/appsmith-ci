@@ -3,14 +3,15 @@ import React from "react";
 import { EventType } from "constants/AppsmithActionConstants/ActionConstants";
 import type { WidgetType } from "constants/WidgetConstants";
 import { ValidationTypes } from "constants/WidgetValidation";
-import type { Stylesheet } from "entities/AppTheming";
+import type { SetterConfig, Stylesheet } from "entities/AppTheming";
 import { createBlobUrl } from "utils/AppsmithUtils";
 import type { DerivedPropertiesMap } from "utils/WidgetFactory";
 import type { WidgetProps, WidgetState } from "widgets/BaseWidget";
 import BaseWidget from "widgets/BaseWidget";
 import { FileDataTypes } from "widgets/constants";
 import AudioRecorderComponent from "../component";
-
+import { DefaultAutocompleteDefinitions } from "widgets/WidgetUtils";
+import type { AutocompletionDefinitions } from "widgets/constants";
 export interface AudioRecorderWidgetProps extends WidgetProps {
   accentColor: string;
   borderRadius: string;
@@ -28,6 +29,18 @@ class AudioRecorderWidget extends BaseWidget<
   AudioRecorderWidgetProps,
   WidgetState
 > {
+  static getAutocompleteDefinitions(): AutocompletionDefinitions {
+    return {
+      "!doc":
+        "Audio recorder widget allows users to record using their microphone, listen to the playback, and export the data to a data source.",
+      "!url": "https://docs.appsmith.com/widget-reference/recorder",
+      isVisible: DefaultAutocompleteDefinitions.isVisible,
+      blobURL: "string",
+      dataURL: "string",
+      rawBinary: "string",
+    };
+  }
+
   static getPropertyPaneContentConfig() {
     return [
       {
@@ -59,7 +72,7 @@ class AudioRecorderWidget extends BaseWidget<
           },
           {
             propertyName: "animateLoading",
-            label: "Animate Loading",
+            label: "Animate loading",
             controlType: "SWITCH",
             helpText: "Controls the loading of the widget",
             defaultValue: true,
@@ -111,7 +124,7 @@ class AudioRecorderWidget extends BaseWidget<
           {
             propertyName: "accentColor",
             helpText: "Changes the color of the recorder button",
-            label: "Button Color",
+            label: "Button color",
             controlType: "COLOR_PICKER",
             isJSConvertible: true,
             isBindProperty: true,
@@ -121,11 +134,11 @@ class AudioRecorderWidget extends BaseWidget<
         ],
       },
       {
-        sectionName: "Border and Shadow",
+        sectionName: "Border and shadow",
         children: [
           {
             propertyName: "borderRadius",
-            label: "Border Radius",
+            label: "Border radius",
             helpText:
               "Rounds the corners of the icon button's outer border edge",
             controlType: "BORDER_RADIUS_OPTIONS",
@@ -136,7 +149,7 @@ class AudioRecorderWidget extends BaseWidget<
           },
           {
             propertyName: "boxShadow",
-            label: "Box Shadow",
+            label: "Box shadow",
             helpText:
               "Enables you to cast a drop shadow from the frame of the widget",
             controlType: "BOX_SHADOW_OPTIONS",
@@ -222,6 +235,21 @@ class AudioRecorderWidget extends BaseWidget<
       });
     }
   };
+
+  static getSetterConfig(): SetterConfig {
+    return {
+      __setters: {
+        setVisibility: {
+          path: "isVisible",
+          type: "boolean",
+        },
+        setDisabled: {
+          path: "isDisabled",
+          type: "boolean",
+        },
+      },
+    };
+  }
 
   getPageView() {
     const {

@@ -1,4 +1,4 @@
-# If someone with write access comments "/build-wds-preview" on a pull request, emit a repository_dispatch event
+# If someone with write access comments "/build-deploy-preview" on a pull request, emit a repository_dispatch event
 name: Build WDS Preview
 
 on:

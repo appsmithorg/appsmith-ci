@@ -1,74 +1,123 @@
-import React, { forwardRef } from "react";
-import { Text } from "../Text";
-import { Spinner } from "../Spinner";
-import { StyledButton } from "./index.styled";
-import type { fontFamilyTypes } from "../../utils/typography";
 import type {
   ButtonProps as HeadlessButtonProps,
   ButtonRef as HeadlessButtonRef,
 } from "@design-system/headless";
+import React, { forwardRef } from "react";
+import { Icon as HeadlessIcon } from "@design-system/headless";
+import { useVisuallyHidden } from "@react-aria/visually-hidden";
 
-export type ButtonVariants = "primary" | "secondary" | "tertiary";
+import { Text } from "../Text";
+import { Spinner } from "../Spinner";
+import type { ButtonColor, ButtonIconPosition, ButtonVariant } from "./types";
+import { DragContainer, StyledButton } from "./index.styled";
 
 export interface ButtonProps extends Omit<HeadlessButtonProps, "className"> {
-  /**
-   *  @default primary
+  /** variant of the button
+   *
+   * @default "filled"
    */
-  variant?: ButtonVariants;
-  children?: React.ReactNode;
-  isDisabled?: boolean;
-  isLoading?: boolean;
-  fontFamily?: fontFamilyTypes;
+  variant?: ButtonVariant;
+  /** Color tone of the button */
+  color?: ButtonColor;
+  /** When true, makes the button occupy all the space available */
   isFitContainer?: boolean;
+  /** Indicates the loading state of the button */
+  isLoading?: boolean;
+  /** Icon to be used in the button of the button */
+  icon?: React.ReactNode;
+  /** Indicates the position of icon of the button */
+  iconPosition?: ButtonIconPosition;
+  /** Makes the button visually and functionaly disabled but focusable */
+  visuallyDisabled?: boolean;
 }
 
 export const Button = forwardRef(
   (props: ButtonProps, ref: HeadlessButtonRef) => {
+    props = useVisuallyDisabled(props);
     const {
       children,
-      fontFamily,
-      isDisabled,
+      color = "accent",
+      icon,
+      iconPosition = "start",
       isFitContainer = false,
       isLoading,
-      onBlur,
-      onFocus,
-      onFocusChange,
-      onKeyDown,
+      // eslint-disable-next-line -- TODO add onKeyUp when the bug is fixed https://github.com/adobe/react-spectrum/issues/4350
       onKeyUp,
-      onPress,
-      onPressChange,
-      onPressEnd,
-      onPressStart,
-      onPressUp,
-      variant = "primary",
+      variant = "filled",
+      visuallyDisabled,
+      ...rest
     } = props;
+    const { visuallyHiddenProps } = useVisuallyHidden();
+
+    const renderChildren = () => {
+      if (isLoading) {
+        return (
+          <>
+            <HeadlessIcon>
+              <Spinner />
+            </HeadlessIcon>
+            {/* TODO(pawan): How to make sure "Loading..." text is internationalized? */}
+            <span {...visuallyHiddenProps}>Loading...</span>
+          </>
+        );
+      }
+
+      return (
+        <>
+          {icon}
+          <Text lineClamp={1} textAlign="center">
+            {children}
+          </Text>
+        </>
+      );
+    };
 
     return (
       <StyledButton
-        data-fit-container={isFitContainer}
-        data-loading={isLoading}
+        $color={color}
+        $variant={variant}
+        aria-busy={isLoading ? true : undefined}
+        aria-disabled={
+          visuallyDisabled || isLoading || props.isDisabled ? true : undefined
+        }
+        data-button=""
+        data-color={color}
+        data-fit-container={isFitContainer ? "" : undefined}
+        data-icon-position={iconPosition === "start" ? "start" : "end"}
+        data-loading={isLoading ? "" : undefined}
         data-variant={variant}
-        isDisabled={isDisabled}
-        onBlur={onBlur}
-        onFocus={onFocus}
-        onFocusChange={onFocusChange}
-        onKeyDown={onKeyDown}
-        onKeyUp={onKeyUp}
-        onPress={onPress}
-        onPressChange={onPressChange}
-        onPressEnd={onPressEnd}
-        onPressStart={onPressStart}
-        onPressUp={onPressUp}
+        draggable
         ref={ref}
+        {...rest}
       >
-        {isLoading && <Spinner />}
-
-        {!isLoading && (
-          <Text fontFamily={fontFamily} lineClamp={1}>
-            {children}
-          </Text>
-        )}
+        {renderChildren()}
+        <DragContainer data-hidden="" />
       </StyledButton>
     );
   },
 );
+
+/**
+ * This hook is used to disable all click/press events on a button
+ * when the button is visually disabled
+ */
+const useVisuallyDisabled = (props: ButtonProps) => {
+  let computedProps = props;
+
+  if (props.visuallyDisabled || props.isLoading) {
+    computedProps = {
+      ...props,
+      isDisabled: false,
+      // disabling click/press events
+      onPress: undefined,
+      onPressStart: undefined,
+      onPressEnd: undefined,
+      onPressChange: undefined,
+      onPressUp: undefined,
+      onKeyDown: undefined,
+      onKeyUp: undefined,
+    };
+  }
+
+  return computedProps;
+};

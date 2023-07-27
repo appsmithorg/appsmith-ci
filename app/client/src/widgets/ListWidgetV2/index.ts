@@ -2,9 +2,13 @@ import { get } from "lodash";
 
 import IconSVG from "./icon.svg";
 import Widget from "./widget";
-import type { FlattenedWidgetProps } from "widgets/constants";
+import type {
+  FlattenedWidgetProps,
+  SnipingModeProperty,
+  PropertyUpdates,
+} from "widgets/constants";
 import { BlueprintOperationTypes } from "widgets/constants";
-import { RegisteredWidgetFeatures } from "utils/WidgetFeatures";
+import { DynamicHeight, RegisteredWidgetFeatures } from "utils/WidgetFeatures";
 import type { WidgetProps } from "widgets/BaseWidget";
 import {
   getNumberOfChildListWidget,
@@ -12,7 +16,7 @@ import {
 } from "./widget/helper";
 import { FILL_WIDGET_MIN_WIDTH } from "constants/minWidthConstants";
 import { getWidgetBluePrintUpdates } from "utils/WidgetBlueprintUtils";
-import { GridDefaults } from "constants/WidgetConstants";
+import { GridDefaults, WIDGET_TAGS } from "constants/WidgetConstants";
 import type { FlexLayer } from "utils/autoLayout/autoLayoutTypes";
 import type { CanvasWidgetsReduxState } from "reducers/entityReducers/canvasWidgetsReducer";
 import {
@@ -48,6 +52,7 @@ export const CONFIG = {
   type: Widget.getWidgetType(),
   name: "List",
   iconSVG: IconSVG,
+  tags: [WIDGET_TAGS.SUGGESTED_WIDGETS, WIDGET_TAGS.DISPLAY],
   needsMeta: true,
   isCanvas: true,
   defaults: {
@@ -132,6 +137,7 @@ export const CONFIG = {
                     containerStyle: "card",
                     dragDisabled: true,
                     isDeletable: false,
+                    isListItemContainer: true,
                     disallowCopy: true,
                     noContainerOffset: true,
                     positioning: Positioning.Fixed,
@@ -346,6 +352,8 @@ export const CONFIG = {
               },
               [containerId]: {
                 positioning: Positioning.Vertical,
+                isFlexChild: true,
+                bottomRow: 13,
               },
               [canvasWidget.widgetId]: {
                 flexLayers,
@@ -357,12 +365,14 @@ export const CONFIG = {
                 alignment: FlexLayerAlignment.Start,
                 leftColumn: 0,
                 rightColumn: GridDefaults.DEFAULT_GRID_COLUMNS - 16,
+                dynamicHeight: DynamicHeight.AUTO_HEIGHT,
               },
               [textWidgets[1].widgetId]: {
                 responsiveBehavior: ResponsiveBehavior.Fill,
                 alignment: FlexLayerAlignment.Start,
                 leftColumn: 0,
                 rightColumn: GridDefaults.DEFAULT_GRID_COLUMNS,
+                dynamicHeight: DynamicHeight.AUTO_HEIGHT,
               },
               [imageWidget.widgetId]: {
                 responsiveBehavior: ResponsiveBehavior.Hug,
@@ -382,11 +392,17 @@ export const CONFIG = {
             widgets: { [widgetId: string]: FlattenedWidgetProps },
             widgetId: string,
             parentId: string,
+            widgetPropertyMaps: { defaultPropertyMap: Record<string, string> },
+            isAutoLayout: boolean,
           ) => {
             if (!parentId) return { widgets };
             const widget = { ...widgets[widgetId] };
 
-            widget.dynamicHeight = "FIXED";
+            widget.dynamicHeight = DynamicHeight.FIXED;
+
+            if (isAutoLayout) {
+              widget.dynamicHeight = DynamicHeight.AUTO_HEIGHT;
+            }
 
             widgets[widgetId] = widget;
             return { widgets };
@@ -465,6 +481,21 @@ export const CONFIG = {
     contentConfig: Widget.getPropertyPaneContentConfig(),
     styleConfig: Widget.getPropertyPaneStyleConfig(),
     stylesheetConfig: Widget.getStylesheetConfig(),
+    autocompleteDefinitions: Widget.getAutocompleteDefinitions(),
+    setterConfig: Widget.getSetterConfig(),
+  },
+  methods: {
+    getSnipingModeUpdates: (
+      propValueMap: SnipingModeProperty,
+    ): PropertyUpdates[] => {
+      return [
+        {
+          propertyPath: "listData",
+          propertyValue: propValueMap.data,
+          isDynamicPropertyPath: true,
+        },
+      ];
+    },
   },
   autoLayout: {
     widgetSize: [

@@ -9,6 +9,7 @@ import type { UIElementSize } from "components/editorComponents/ResizableUtils";
 import WidgetNameComponent from "components/editorComponents/WidgetNameComponent";
 import { EventType } from "constants/AppsmithActionConstants/ActionConstants";
 import type { RenderMode } from "constants/WidgetConstants";
+import { MAX_MODAL_WIDTH_FROM_MAIN_WIDTH } from "constants/WidgetConstants";
 import { WIDGET_PADDING } from "constants/WidgetConstants";
 import { ValidationTypes } from "constants/WidgetValidation";
 import type { Stylesheet } from "entities/AppTheming";
@@ -30,12 +31,22 @@ import { ClickContentToOpenPropPane } from "utils/hooks/useClickToSelectWidget";
 import WidgetFactory from "utils/WidgetFactory";
 import type { WidgetProps, WidgetState } from "widgets/BaseWidget";
 import BaseWidget from "widgets/BaseWidget";
-import { isAutoHeightEnabledForWidget } from "widgets/WidgetUtils";
+import {
+  isAutoHeightEnabledForWidget,
+  DefaultAutocompleteDefinitions,
+} from "widgets/WidgetUtils";
 import ModalComponent from "../component";
+import type { AutocompletionDefinitions } from "widgets/constants";
 
 const minSize = 100;
 
 export class ModalWidget extends BaseWidget<ModalWidgetProps, WidgetState> {
+  static getAutocompleteDefinitions(): AutocompletionDefinitions {
+    return {
+      isVisible: DefaultAutocompleteDefinitions.isVisible,
+    };
+  }
+
   static getPropertyPaneContentConfig() {
     return [
       {
@@ -44,14 +55,14 @@ export class ModalWidget extends BaseWidget<ModalWidgetProps, WidgetState> {
           {
             helpText: "Enables scrolling for content inside the widget",
             propertyName: "shouldScrollContents",
-            label: "Scroll Contents",
+            label: "Scroll contents",
             controlType: "SWITCH",
             isBindProperty: false,
             isTriggerProperty: false,
           },
           {
             propertyName: "animateLoading",
-            label: "Animate Loading",
+            label: "Animate loading",
             controlType: "SWITCH",
             helpText: "Controls the loading of the widget",
             defaultValue: true,
@@ -96,7 +107,7 @@ export class ModalWidget extends BaseWidget<ModalWidgetProps, WidgetState> {
           {
             propertyName: "backgroundColor",
             helpText: "Sets the background color of the widget",
-            label: "Background Color",
+            label: "Background color",
             controlType: "COLOR_PICKER",
             isJSConvertible: true,
             isBindProperty: true,
@@ -106,11 +117,11 @@ export class ModalWidget extends BaseWidget<ModalWidgetProps, WidgetState> {
         ],
       },
       {
-        sectionName: "Border and Shadow",
+        sectionName: "Border and shadow",
         children: [
           {
             propertyName: "borderRadius",
-            label: "Border Radius",
+            label: "Border radius",
             helpText:
               "Rounds the corners of the icon button's outer border edge",
             controlType: "BORDER_RADIUS_OPTIONS",
@@ -138,7 +149,7 @@ export class ModalWidget extends BaseWidget<ModalWidgetProps, WidgetState> {
   };
 
   getMaxModalWidth() {
-    return this.props.mainCanvasWidth * 0.95;
+    return this.props.mainCanvasWidth * MAX_MODAL_WIDTH_FROM_MAIN_WIDTH;
   }
 
   getModalWidth(width: number) {

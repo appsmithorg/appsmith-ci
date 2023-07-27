@@ -1,57 +1,32 @@
 import styled, { css } from "styled-components";
+import type { OmitRename } from "../../utils";
 
 import type { TextProps } from "./Text";
-import { createTypographyStyles } from "../../utils/typography";
 
-const shouldForwardProp = (prop: any) => {
-  const propsToOmit = [
-    "fontWeight",
-    "fontStyle",
-    "color",
-    "textAlign",
-    "textDecoration",
-    "lineClamp",
-  ];
+type StyledTextProp = OmitRename<TextProps, "className" | "color" | "children">;
 
-  return !propsToOmit.includes(prop);
-};
+const truncateStyles = css<StyledTextProp>`
+  ${(props) => {
+    const { $lineClamp } = props;
 
-const typographyStyles = css`
-  ${(props: TextProps) => {
-    const { capHeight = 10, fontFamily, lineGap = 8 } = props;
-    const styles = createTypographyStyles({ fontFamily, lineGap, capHeight });
-
-    return styles;
-  }}
-`;
-
-/**
- * adds Truncate styles
- * truncate -> trucate text to single line
- * lineClamp -> truncate text to multiple lines
- *
- * @param {TextProps} props
- * @returns {string}
- */
-const truncateStyles = css`
-  ${(props: TextProps) => {
-    const { lineClamp } = props;
-
-    if (typeof lineClamp === "number") {
+    if (typeof $lineClamp === "number") {
       return css`
         span {
           display: -webkit-box;
-          -webkit-line-clamp: ${lineClamp};
+          -webkit-line-clamp: ${$lineClamp};
           -webkit-box-orient: vertical;
           overflow: hidden;
-          text-overflow: ellipsis;
-          word-break: break-all;
+          overflow-wrap: break-word;
         }
       `;
     }
 
-    return "";
-  }}
+    return css`
+      span {
+        overflow-wrap: break-word;
+      }
+    `;
+  }}}
 `;
 
 export const StyledText = styled.div.withConfig({
@@ -63,6 +38,22 @@ export const StyledText = styled.div.withConfig({
   font-style: ${({ fontStyle }) => fontStyle};
   text-align: ${({ textAlign }) => textAlign};
 
-  ${truncateStyles}
-  ${typographyStyles}
+  color: ${({ color }) => {
+    switch (true) {
+      case color === "default":
+        return "inherit";
+      case color === "neutral":
+        return "var(--color-fg-neutral)";
+      case color === "positive":
+        return "var(--color-fg-positive)";
+      case color === "warning":
+        return "var(--color-fg-warning)";
+      case color === "negative":
+        return "var(--color-fg-negative)";
+      default:
+        return "inherit";
+    }
+  }};
+
+  ${truncateStyles};
 `;
