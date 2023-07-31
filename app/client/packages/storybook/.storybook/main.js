@@ -20,11 +20,19 @@ async function webpackConfig(config) {
   return config;
 }
 
-module.exports = {
-  stories: [
+function getStories() {
+  if (process.env.CHROMATIC) {
+    return ["../../design-system/**/*.chromatic.@(js|jsx|ts|tsx)"];
+  }
+
+  return [
     "../../design-system/**/*.stories.mdx",
     "../../design-system/**/*.stories.@(js|jsx|ts|tsx)",
-  ],
+  ];
+}
+
+module.exports = {
+  stories: getStories(),
   addons: [
     "@storybook/addon-links",
     "@storybook/addon-essentials",
