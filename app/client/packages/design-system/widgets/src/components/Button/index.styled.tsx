@@ -16,7 +16,7 @@ export const buttonStyles = css<StyledButtonProps>`
   ${({ $color, $variant }) => {
     if ($variant === "filled") {
       return css`
-        background-color: var(--color-bg-${$color});
+        background-color: violet;
         color: var(--color-fg-on-${$color});
         border-color: transparent;
 
