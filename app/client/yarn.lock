@@ -2430,10 +2430,11 @@ __metadata:
     "@types/react": ^17.0.2
     "@types/react-dom": ^17.0.2
     autoprefixer: ^9.0.0
-    babel-loader: 9.1.2
+    babel-loader: ^8.3.0
     chromatic: ^6.19.8
     colorjs.io: ^0.4.3
-    postcss: ^8.4.23
+    postcss: ^8
+    re-resizable: ^6.9.9
     react-docgen-typescript: ^2.2.2
     storybook-addon-pseudo-states: ^1.15.2
     storybook-color-picker: ^3.1.0
@@ -10591,20 +10592,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"babel-loader@npm:9.1.2":
-  version: 9.1.2
-  resolution: "babel-loader@npm:9.1.2"
-  dependencies:
-    find-cache-dir: ^3.3.2
-    schema-utils: ^4.0.0
-  peerDependencies:
-    "@babel/core": ^7.12.0
-    webpack: ">=5"
-  checksum: f0edb8e157f9806b810ba3f2c8ca8fa489d377ae5c2b7b00c2ace900a6925641ce4ec520b9c12f70e37b94aa5366e7003e0f6271b26821643e109966ce741cb7
-  languageName: node
-  linkType: hard
-
-"babel-loader@npm:^8.0.0, babel-loader@npm:^8.2.3":
+"babel-loader@npm:^8.0.0, babel-loader@npm:^8.2.3, babel-loader@npm:^8.3.0":
   version: 8.3.0
   resolution: "babel-loader@npm:8.3.0"
   dependencies:
@@ -24599,14 +24587,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss@npm:^8.2.15, postcss@npm:^8.3.5, postcss@npm:^8.4.12, postcss@npm:^8.4.14, postcss@npm:^8.4.23, postcss@npm:^8.4.4, postcss@npm:^8.4.7":
-  version: 8.4.24
-  resolution: "postcss@npm:8.4.24"
+"postcss@npm:^8, postcss@npm:^8.2.15, postcss@npm:^8.3.5, postcss@npm:^8.4.12, postcss@npm:^8.4.14, postcss@npm:^8.4.23, postcss@npm:^8.4.4, postcss@npm:^8.4.7":
+  version: 8.4.27
+  resolution: "postcss@npm:8.4.27"
   dependencies:
     nanoid: ^3.3.6
     picocolors: ^1.0.0
     source-map-js: ^1.0.2
-  checksum: 814e2126dacfea313588eda09cc99a9b4c26ec55c059188aa7a916d20d26d483483106dc5ff9e560731b59f45c5bb91b945dfadc670aed875cc90ddbbf4e787d
+  checksum: 1cdd0c298849df6cd65f7e646a3ba36870a37b65f55fd59d1a165539c263e9b4872a402bf4ed1ca1bc31f58b68b2835545e33ea1a23b161a1f8aa6d5ded81e78
   languageName: node
   linkType: hard
 
@@ -25405,6 +25393,16 @@ __metadata:
   peerDependencies:
     reselect: ">1.0.0"
   checksum: ead25756ba1c607a100f9110fe501a6dbeb29deaf5b4a22ad678f7ca2a7b3492fcccf62cbd02316ca2aa622640e57c939b63077cfacbf67389eedceae6d73df3
+  languageName: node
+  linkType: hard
+
+"re-resizable@npm:^6.9.9":
+  version: 6.9.9
+  resolution: "re-resizable@npm:6.9.9"
+  peerDependencies:
+    react: ^16.13.1 || ^17.0.0 || ^18.0.0
+    react-dom: ^16.13.1 || ^17.0.0 || ^18.0.0
+  checksum: a2c8bfe86646fb02d5c9c624b1da26f9e6a5e2f552cd96ce4db690588bee6b21177065ce8e98646c6ca0b1a9c4ce233824b75eb346800d8248ac8a87b40f1b28
   languageName: node
   linkType: hard
 
