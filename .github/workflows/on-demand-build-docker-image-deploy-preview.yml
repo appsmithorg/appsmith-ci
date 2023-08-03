@@ -167,21 +167,13 @@ jobs:
       - name: Generate info.json
         run: scripts/generate_info_json.sh
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v1
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      - name: Push to Docker Hub
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          pull: true
-          push: true
-          cache-from: ${{ vars.DOCKER_HUB_ORGANIZATION }}/appsmith-ci:release
-          tags: |
-            ${{ vars.DOCKER_HUB_ORGANIZATION }}/appsmith-dp:ci-${{ github.event.client_payload.pull_request.number }}
+          repository: ${{ vars.DOCKER_HUB_ORGANIZATION }}/appsmith-dp
+          tags: ci-${{ github.event.client_payload.pull_request.number }}
           build-args: |
             APPSMITH_CLOUD_SERVICES_BASE_URL=https://release-cs.appsmith.com
 
